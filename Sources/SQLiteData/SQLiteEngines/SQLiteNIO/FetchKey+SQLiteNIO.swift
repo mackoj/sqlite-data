@@ -127,4 +127,9 @@ public protocol SQLiteNIOFetchRequest<Value>: Sendable, Hashable {
   var observedTables: Set<String> { get }
 }
 
+/// An error indicating that no row was found for a query that expected one.
+public struct NotFound: Error {
+  public init() {}
+}
+
 #endif

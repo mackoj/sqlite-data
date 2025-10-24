@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 protocol StatementKeyRequest<QueryValue>: FetchKeyRequest {
   associatedtype QueryValue
   var statement: SQLQueryExpression<QueryValue> { get }
@@ -12,3 +13,4 @@ extension StatementKeyRequest {
     hasher.combine(statement.query)
   }
 }
+#endif
