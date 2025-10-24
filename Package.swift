@@ -24,7 +24,17 @@ let package = Package(
     .trait(
       name: "SQLiteDataTagged",
       description: "Introduce SQLiteData conformances to the swift-tagged package."
-    )
+    ),
+    .trait(
+      name: "GRDB",
+      description: "Use GRDB as the SQLite engine.",
+      enabledTraits: []
+    ),
+    .trait(
+      name: "SQLiteNIO",
+      description: "Use SQLiteNIO as the SQLite engine.",
+      enabledTraits: []
+    ),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-collections", from: "1.0.0"),
@@ -51,8 +61,8 @@ let package = Package(
       dependencies: [
         .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
         .product(name: "Dependencies", package: "swift-dependencies"),
-        .product(name: "GRDB", package: "GRDB.swift"),
-        .product(name: "SQLiteNIO", package: "sqlite-nio"),
+        .product(name: "GRDB", package: "GRDB.swift", condition: .when(traits: ["GRDB"])),
+        .product(name: "SQLiteNIO", package: "sqlite-nio", condition: .when(traits: ["SQLiteNIO"])),
         .product(name: "IssueReporting", package: "xctest-dynamic-overlay"),
         .product(name: "OrderedCollections", package: "swift-collections"),
         .product(name: "Sharing", package: "swift-sharing"),
@@ -62,6 +72,10 @@ let package = Package(
           package: "swift-tagged",
           condition: .when(traits: ["SQLiteDataTagged"])
         ),
+      ],
+      swiftSettings: [
+        .define("SQLITE_ENGINE_GRDB", .when(traits: ["GRDB"])),
+        .define("SQLITE_ENGINE_SQLITENO", .when(traits: ["SQLiteNIO"])),
       ]
     ),
     .target(

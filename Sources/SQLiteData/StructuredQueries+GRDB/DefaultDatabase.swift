@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import Dependencies
 import Foundation
 
@@ -154,4 +155,6 @@ extension DependencyValues {
   extension String {
     package static let defaultDatabaseLabel = "co.pointfree.SQLiteData.testValue"
   }
+#endif
+
 #endif

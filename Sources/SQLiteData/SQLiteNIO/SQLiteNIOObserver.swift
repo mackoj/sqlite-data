@@ -5,7 +5,7 @@
 
 import Foundation
 
-#if canImport(SQLiteNIO)
+#if SQLITE_ENGINE_SQLITENO
 import SQLiteNIO
 import Sharing
 

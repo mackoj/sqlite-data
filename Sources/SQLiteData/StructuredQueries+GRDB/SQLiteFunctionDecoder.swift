@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import Foundation
 import GRDBSQLite
 import StructuredQueriesCore
@@ -95,3 +96,5 @@ struct SQLiteFunctionDecoder: QueryDecoder {
     return UUID(uuidString: uuidString)
   }
 }
+
+#endif

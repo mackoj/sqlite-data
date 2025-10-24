@@ -2,7 +2,7 @@ import Dependencies
 import Foundation
 import Sharing
 
-#if canImport(SQLiteNIO)
+#if SQLITE_ENGINE_SQLITENO
 import SQLiteNIO
 
 /// Extension to support SQLiteNIO-based observation in FetchKey

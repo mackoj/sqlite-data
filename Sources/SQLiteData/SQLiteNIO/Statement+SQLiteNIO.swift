@@ -2,7 +2,7 @@ import Foundation
 import NIOCore
 import StructuredQueriesCore
 
-#if canImport(SQLiteNIO)
+#if SQLITE_ENGINE_SQLITENO
 import SQLiteNIO
 
 /// Extension to execute StructuredQueries statements using SQLiteNIO

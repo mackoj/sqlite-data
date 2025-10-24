@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import Foundation
 import GRDBSQLite
 import StructuredQueriesCore
@@ -98,3 +99,5 @@ struct UInt64OverflowError: Error {
     self.signedInteger = signedInteger
   }
 }
+
+#endif

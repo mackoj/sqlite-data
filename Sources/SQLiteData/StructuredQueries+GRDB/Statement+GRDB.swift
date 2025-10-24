@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import StructuredQueriesCore
 
 extension StructuredQueriesCore.Statement {
@@ -227,3 +228,5 @@ extension SelectStatement where QueryValue == () {
     try QueryPackCursor<From, repeat each J>(db: db, query: query)
   }
 }
+
+#endif
