@@ -71,6 +71,7 @@ public struct FetchAll<Element: Sendable>: Sendable {
     }
   #endif
 
+  #if SQLITE_ENGINE_GRDB
   /// Initializes this property with a query that fetches every row from a table.
   ///
   /// - Parameters:
@@ -85,6 +86,7 @@ public struct FetchAll<Element: Sendable>: Sendable {
     let statement = Element.all.selectStar().asSelect()
     self.init(wrappedValue: wrappedValue, statement, database: database)
   }
+  #endif
 
   /// Initializes this property with a default value.
   @_disfavoredOverload
@@ -98,6 +100,7 @@ public struct FetchAll<Element: Sendable>: Sendable {
     sharedReader = SharedReader(value: wrappedValue)
   }
 
+  #if SQLITE_ENGINE_GRDB
   /// Initializes this property with a query associated with the wrapped value.
   ///
   /// - Parameters:
@@ -211,8 +214,10 @@ public struct FetchAll<Element: Sendable>: Sendable {
       )
     )
   }
+  #endif
 }
 
+#if SQLITE_ENGINE_GRDB
 extension FetchAll {
   /// Initializes this property with a query that fetches every row from a table.
   ///
@@ -364,6 +369,7 @@ extension FetchAll {
     )
   }
 }
+#endif
 
 extension FetchAll: CustomReflectable {
   public var customMirror: Mirror {
@@ -383,6 +389,7 @@ extension FetchAll: Equatable where Element: Equatable {
       sharedReader.update()
     }
 
+    #if SQLITE_ENGINE_GRDB
     /// Initializes this property with a query that fetches every row from a table.
     ///
     /// - Parameters:
@@ -537,9 +544,11 @@ extension FetchAll: Equatable where Element: Equatable {
         )
       )
     }
+    #endif
   }
 #endif
 
+#if SQLITE_ENGINE_GRDB
 private struct FetchAllStatementValueRequest<Value: QueryRepresentable>: StatementKeyRequest {
   let statement: SQLQueryExpression<Value>
   init(statement: some StructuredQueriesCore.Statement<Value>) {
@@ -549,3 +558,4 @@ private struct FetchAllStatementValueRequest<Value: QueryRepresentable>: Stateme
     try statement.fetchAll(db)
   }
 }
+#endif

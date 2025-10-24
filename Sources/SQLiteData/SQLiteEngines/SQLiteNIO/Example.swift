@@ -1,11 +1,10 @@
+#if SQLITE_ENGINE_SQLITENO
 /// Example Usage of SQLiteNIO Integration
 ///
 /// This file provides examples of how to use the SQLiteNIO-based database abstractions.
 /// These examples are for documentation purposes and are not meant to be run directly.
 
 import Foundation
-
-#if SQLITE_ENGINE_SQLITENO
 import SQLiteNIO
 
 /// Example demonstrating basic SQLiteNIO usage

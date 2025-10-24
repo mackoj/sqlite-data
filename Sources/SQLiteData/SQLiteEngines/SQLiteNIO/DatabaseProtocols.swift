@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_SQLITENO
 /// SQLiteNIO-based database abstractions
 ///
 /// This file provides protocol definitions that mirror GRDB's DatabaseReader and DatabaseWriter
@@ -6,8 +7,6 @@
 /// These are experimental and run alongside the existing GRDB implementation.
 
 import Foundation
-
-#if SQLITE_ENGINE_SQLITENO
 import SQLiteNIO
 
 /// Namespace for SQLiteNIO-based implementations

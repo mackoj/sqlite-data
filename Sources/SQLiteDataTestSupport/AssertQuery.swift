@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import CustomDump
 import Dependencies
 import Foundation
@@ -271,3 +272,4 @@ private func printTable<each C>(_ rows: [(repeat each C)], to output: inout some
   )
   output.write("─┘")
 }
+#endif

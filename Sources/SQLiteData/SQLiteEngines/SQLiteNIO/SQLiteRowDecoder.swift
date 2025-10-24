@@ -1,10 +1,9 @@
+#if SQLITE_ENGINE_SQLITENO
 /// SQLiteRow Decoder
 ///
 /// Provides Decodable support for SQLiteNIO's SQLiteRow, similar to GRDB's FetchableRecord.
 
 import Foundation
-
-#if SQLITE_ENGINE_SQLITENO
 import SQLiteNIO
 import NIOCore
 import NIOFoundationCompat

@@ -1,8 +1,7 @@
+#if SQLITE_ENGINE_SQLITENO
 import Dependencies
 import Foundation
 import Sharing
-
-#if SQLITE_ENGINE_SQLITENO
 import SQLiteNIO
 
 /// Extension to support SQLiteNIO-based observation in FetchKey
@@ -126,6 +125,11 @@ public protocol SQLiteNIOFetchRequest<Value>: Sendable, Hashable {
   
   /// The tables that this request observes for changes
   var observedTables: Set<String> { get }
+}
+
+/// An error indicating that no row was found for a query that expected one.
+public struct NotFound: Error {
+  public init() {}
 }
 
 #endif

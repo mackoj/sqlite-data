@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 /// A type that can request a value from a database.
 ///
 /// This type can be used to describe a transaction to read data from SQLite:
@@ -48,3 +49,4 @@ public protocol FetchKeyRequest<Value>: Hashable, Sendable {
   /// Fetches a value from a database.
   func fetch(_ db: Database) throws -> Value
 }
+#endif
