@@ -1,4 +1,4 @@
-#if canImport(CloudKit) && GRDB
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
   @Table("sqlitedata_icloud_recordTypes")
   package struct RecordType: Hashable {
     @Column(primaryKey: true)

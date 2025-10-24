@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import Foundation
 import SQLiteData
 import Testing
@@ -30,3 +31,4 @@ import Testing
     }
   }
 }
+#endif

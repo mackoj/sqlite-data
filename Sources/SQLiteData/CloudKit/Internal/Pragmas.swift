@@ -1,4 +1,4 @@
-#if canImport(CloudKit) && GRDB
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
   @Table
   struct PragmaDatabaseList {
     static var tableAlias: String? { "databases" }

@@ -1,4 +1,4 @@
-#if canImport(CloudKit) && GRDB
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
   import CloudKit
 
   @available(iOS 15, tvOS 15, macOS 12, watchOS 8, *)

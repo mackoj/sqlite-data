@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import DependenciesTestSupport
 import Foundation
 import InlineSnapshotTesting
@@ -1222,3 +1223,4 @@ extension SQLiteSchema {
     .where { !$0.name.hasPrefix("sqlite_") }
     .order(by: \.name)
 }
+#endif

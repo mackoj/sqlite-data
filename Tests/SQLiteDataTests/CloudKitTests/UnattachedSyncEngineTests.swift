@@ -1,3 +1,4 @@
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
 import CloudKit
 import CustomDump
 import InlineSnapshotTesting
@@ -23,3 +24,4 @@ extension BaseCloudKitTests {
     }
   }
 }
+#endif

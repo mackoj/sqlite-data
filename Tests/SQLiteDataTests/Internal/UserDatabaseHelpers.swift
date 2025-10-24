@@ -1,3 +1,4 @@
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
 import SQLiteData
 
 extension UserDatabase {
@@ -22,3 +23,4 @@ extension UserDatabase {
     }
   }
 }
+#endif

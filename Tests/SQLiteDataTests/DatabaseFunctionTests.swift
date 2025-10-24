@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import DependenciesTestSupport
 import Foundation
 import SQLiteData
@@ -68,3 +69,4 @@ extension DatabaseWriter where Self == DatabaseQueue {
     return database
   }
 }
+#endif

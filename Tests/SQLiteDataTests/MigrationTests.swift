@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import Foundation
 import SQLiteData
 import Testing
@@ -37,3 +38,4 @@ import Testing
 @Table private struct Model {
   var date: Date
 }
+#endif

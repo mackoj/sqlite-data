@@ -1,4 +1,4 @@
-#if canImport(CloudKit) && GRDB
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
   import CloudKit
 
   @Table("sqlitedata_icloud_pendingRecordZoneChanges")

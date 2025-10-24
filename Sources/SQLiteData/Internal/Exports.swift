@@ -17,3 +17,9 @@
 @_exported import protocol GRDB.DatabaseWriter
 @_exported import protocol GRDB.ValueObservationScheduler
 #endif
+
+#if SQLITE_ENGINE_SQLITENIO
+@_exported import NIOCore
+@_exported import NIOPosix
+@_exported import SQLiteNIO
+#endif
