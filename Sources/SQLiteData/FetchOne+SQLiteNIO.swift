@@ -1,4 +1,5 @@
 #if canImport(SQLiteNIO)
+import Dependencies
 import Foundation
 import NIOCore
 import SQLiteNIO
@@ -10,27 +11,35 @@ extension FetchOne {
   
   /// Initializes this property with a query that fetches the first row from a table using SQLiteNIO.
   ///
-  /// Example:
+  /// Example with explicit connection:
   /// ```swift
   /// @FetchOne(User.where { $0.id == 1 }, connection: sqliteConnection) var user
   /// ```
   ///
+  /// Example with default connection:
+  /// ```swift
+  /// @FetchOne(User.where { $0.id == 1 }) var user
+  /// ```
+  ///
   /// - Parameters:
   ///   - wrappedValue: A default value to associate with this property.
-  ///   - connection: The SQLiteNIO connection to read from.
+  ///   - connection: The SQLiteNIO connection to read from. If `nil`, uses `@Dependency(\.defaultSQLiteConnection)`.
   public init(
     wrappedValue: sending Value,
-    connection: SQLiteConnection
+    connection: SQLiteConnection? = nil
   )
   where
     Value: StructuredQueriesCore.Table & QueryRepresentable,
     Value.QueryOutput == Value,
     Value: Decodable
   {
+    @Dependency(\.defaultSQLiteConnection) var defaultConnection
+    let actualConnection = connection ?? defaultConnection
+    
     let statement = Value.all.selectStar().asSelect().limit(1)
     sharedReader = SharedReader(
       wrappedValue: wrappedValue,
-      .fetchNIO(FetchOneStatementNIORequest(statement: statement), connection: connection)
+      .fetchNIO(FetchOneStatementNIORequest(statement: statement), connection: actualConnection)
     )
   }
   
@@ -38,10 +47,10 @@ extension FetchOne {
   ///
   /// - Parameters:
   ///   - wrappedValue: A default value to associate with this property.
-  ///   - connection: The SQLiteNIO connection to read from.
+  ///   - connection: The SQLiteNIO connection to read from. If `nil`, uses `@Dependency(\.defaultSQLiteConnection)`.
   public init(
     wrappedValue: sending Value,
-    connection: SQLiteConnection
+    connection: SQLiteConnection? = nil
   )
   where
     Value: _OptionalProtocol & Decodable,
@@ -49,10 +58,13 @@ extension FetchOne {
     Value.QueryOutput == Value,
     Value.Wrapped: Decodable
   {
+    @Dependency(\.defaultSQLiteConnection) var defaultConnection
+    let actualConnection = connection ?? defaultConnection
+    
     let statement = Value.all.selectStar().asSelect().limit(1)
     sharedReader = SharedReader(
       wrappedValue: wrappedValue,
-      .fetchNIO(FetchOneStatementNIOOptionalRequest(statement: statement), connection: connection)
+      .fetchNIO(FetchOneStatementNIOOptionalRequest(statement: statement), connection: actualConnection)
     )
   }
   
@@ -70,17 +82,20 @@ extension FetchOne {
   public init<V: QueryRepresentable & Decodable>(
     wrappedValue: Value,
     _ statement: some StructuredQueriesCore.Statement<V>,
-    connection: SQLiteConnection
+    connection: SQLiteConnection? = nil
   )
   where
     Value == V.QueryOutput,
     V.QueryOutput: Decodable
   {
+    @Dependency(\.defaultSQLiteConnection) var defaultConnection
+    let actualConnection = connection ?? defaultConnection
+    
     sharedReader = SharedReader(
       wrappedValue: wrappedValue,
       .fetchNIO(
         FetchOneStatementNIORequest(statement: statement),
-        connection: connection
+        connection: actualConnection
       )
     )
   }
@@ -90,21 +105,24 @@ extension FetchOne {
   /// - Parameters:
   ///   - wrappedValue: A default value to associate with this property.
   ///   - statement: A query associated with the wrapped value.
-  ///   - connection: The SQLiteNIO connection to read from.
+  ///   - connection: The SQLiteNIO connection to read from. If `nil`, uses `@Dependency(\.defaultSQLiteConnection)`.
   public init<V: QueryRepresentable & Decodable>(
     wrappedValue: Value = nil,
     _ statement: some StructuredQueriesCore.Statement<V>,
-    connection: SQLiteConnection
+    connection: SQLiteConnection? = nil
   )
   where
     Value == V.QueryOutput?,
     V.QueryOutput: Decodable
   {
+    @Dependency(\.defaultSQLiteConnection) var defaultConnection
+    let actualConnection = connection ?? defaultConnection
+    
     sharedReader = SharedReader(
       wrappedValue: wrappedValue,
       .fetchNIO(
         FetchOneStatementNIOOptionalValueRequest(statement: statement),
-        connection: connection
+        connection: actualConnection
       )
     )
   }

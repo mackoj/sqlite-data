@@ -1,4 +1,5 @@
 #if canImport(SQLiteNIO)
+import Dependencies
 import Foundation
 import NIOCore
 import SQLiteNIO
@@ -10,17 +11,22 @@ extension FetchAll {
   
   /// Initializes this property with a query that fetches every row from a table using SQLiteNIO.
   ///
-  /// Example:
+  /// Example with explicit connection:
   /// ```swift
   /// @FetchAll(Item.all, connection: sqliteConnection) var items
   /// ```
   ///
+  /// Example with default connection:
+  /// ```swift
+  /// @FetchAll(Item.all) var items
+  /// ```
+  ///
   /// - Parameters:
   ///   - wrappedValue: A default collection to associate with this property.
-  ///   - connection: The SQLiteNIO connection to read from.
+  ///   - connection: The SQLiteNIO connection to read from. If `nil`, uses `@Dependency(\.defaultSQLiteConnection)`.
   public init(
     wrappedValue: [Element] = [],
-    connection: SQLiteConnection
+    connection: SQLiteConnection? = nil
   )
   where Element: StructuredQueriesCore.Table, Element.QueryOutput == Element, Element: Decodable {
     let statement = Element.all.selectStar().asSelect()
@@ -29,19 +35,24 @@ extension FetchAll {
   
   /// Initializes this property with a query associated with the wrapped value using SQLiteNIO.
   ///
-  /// Example:
+  /// Example with explicit connection:
   /// ```swift
   /// @FetchAll(User.where { $0.active == true }, connection: sqliteConnection) var activeUsers
+  /// ```
+  ///
+  /// Example with default connection:
+  /// ```swift
+  /// @FetchAll(User.where { $0.active == true }) var activeUsers
   /// ```
   ///
   /// - Parameters:
   ///   - wrappedValue: A default collection to associate with this property.
   ///   - statement: A query associated with the wrapped value.
-  ///   - connection: The SQLiteNIO connection to read from.
+  ///   - connection: The SQLiteNIO connection to read from. If `nil`, uses `@Dependency(\.defaultSQLiteConnection)`.
   public init<S: SelectStatement>(
     wrappedValue: [Element] = [],
     _ statement: S,
-    connection: SQLiteConnection
+    connection: SQLiteConnection? = nil
   )
   where
     Element == S.From.QueryOutput,
@@ -51,12 +62,15 @@ extension FetchAll {
     S.From.QueryOutput: Decodable,
     S.Joins == ()
   {
+    @Dependency(\.defaultSQLiteConnection) var defaultConnection
+    let actualConnection = connection ?? defaultConnection
+    
     let fullStatement = statement.selectStar()
     sharedReader = SharedReader(
       wrappedValue: wrappedValue,
       .fetchNIO(
         FetchAllStatementNIORequest(statement: fullStatement),
-        connection: connection
+        connection: actualConnection
       )
     )
   }
@@ -66,22 +80,25 @@ extension FetchAll {
   /// - Parameters:
   ///   - wrappedValue: A default collection to associate with this property.
   ///   - statement: A query associated with the wrapped value.
-  ///   - connection: The SQLiteNIO connection to read from.
+  ///   - connection: The SQLiteNIO connection to read from. If `nil`, uses `@Dependency(\.defaultSQLiteConnection)`.
   public init<V: QueryRepresentable & Decodable>(
     wrappedValue: [Element] = [],
     _ statement: some StructuredQueriesCore.Statement<V>,
-    connection: SQLiteConnection
+    connection: SQLiteConnection? = nil
   )
   where
     Element == V.QueryOutput,
     V.QueryOutput: Sendable,
     V.QueryOutput: Decodable
   {
+    @Dependency(\.defaultSQLiteConnection) var defaultConnection
+    let actualConnection = connection ?? defaultConnection
+    
     sharedReader = SharedReader(
       wrappedValue: wrappedValue,
       .fetchNIO(
         FetchAllStatementNIORequest(statement: statement),
-        connection: connection
+        connection: actualConnection
       )
     )
   }
@@ -91,22 +108,25 @@ extension FetchAll {
   /// - Parameters:
   ///   - wrappedValue: A default collection to associate with this property.
   ///   - statement: A query associated with the wrapped value.
-  ///   - connection: The SQLiteNIO connection to read from.
+  ///   - connection: The SQLiteNIO connection to read from. If `nil`, uses `@Dependency(\.defaultSQLiteConnection)`.
   public init<S: StructuredQueriesCore.Statement<Element>>(
     wrappedValue: [Element] = [],
     _ statement: S,
-    connection: SQLiteConnection
+    connection: SQLiteConnection? = nil
   )
   where
     Element: QueryRepresentable,
     Element: Decodable,
     Element == S.QueryValue.QueryOutput
   {
+    @Dependency(\.defaultSQLiteConnection) var defaultConnection
+    let actualConnection = connection ?? defaultConnection
+    
     sharedReader = SharedReader(
       wrappedValue: wrappedValue,
       .fetchNIO(
         FetchAllStatementNIORequest(statement: statement),
-        connection: connection
+        connection: actualConnection
       )
     )
   }
