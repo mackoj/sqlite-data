@@ -35,7 +35,7 @@ let package = Package(
       description: "Use SQLiteNIO as the SQLite engine.",
       enabledTraits: []
     ),
-    .default(enabledTraits: ["GRDB"]),
+    .default(enabledTraits: ["SQLiteNIO"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-collections", from: "1.0.0"),
