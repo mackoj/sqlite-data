@@ -1,6 +1,5 @@
 #if canImport(SQLiteNIO)
 import Foundation
-import GRDB
 import SQLiteNIO
 import Sharing
 import StructuredQueriesCore

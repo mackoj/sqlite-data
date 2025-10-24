@@ -1,6 +1,5 @@
 #if canImport(SQLiteNIO)
 import Foundation
-import GRDB
 import SQLiteNIO
 import Sharing
 import StructuredQueriesCore
@@ -60,7 +59,7 @@ extension FetchAll {
   ///   - wrappedValue: A default collection to associate with this property.
   ///   - statement: A query associated with the wrapped value.
   ///   - connection: The SQLiteNIO connection to read from.
-  public init<V: QueryRepresentable>(
+  public init<V: QueryRepresentable & Decodable>(
     wrappedValue: [Element] = [],
     _ statement: some StructuredQueriesCore.Statement<V>,
     connection: SQLiteConnection
