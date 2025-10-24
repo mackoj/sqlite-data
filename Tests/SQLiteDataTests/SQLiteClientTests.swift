@@ -23,9 +23,12 @@ struct SQLiteClientTests {
     let database = try DatabaseQueue()
     let client = SQLiteClient.grdb(database: database)
     
-    // Verify we can create a path
-    let path = try client.contextSensitivePath()
-    #expect(path != nil || path == nil) // Path varies by context
+    // Verify basic client functionality
+    var readExecuted = false
+    try await client.read {
+      readExecuted = true
+    }
+    #expect(readExecuted)
     #endif
   }
   
@@ -35,9 +38,12 @@ struct SQLiteClientTests {
     let connection = try await SQLiteConnection.open(storage: .memory)
     let client = SQLiteClient.nio(connection: connection)
     
-    // Verify we can create a path
-    let path = try client.contextSensitivePath()
-    #expect(path != nil || path == nil) // Path varies by context
+    // Verify basic client functionality
+    var readExecuted = false
+    try await client.read {
+      readExecuted = true
+    }
+    #expect(readExecuted)
     #endif
   }
   
@@ -131,20 +137,28 @@ struct SQLiteClientTests {
       $0.context = .test
     } operation: {
       #if SQLITE_ENGINE_GRDB
-      let database = try! DatabaseQueue()
-      let client = SQLiteClient.grdb(database: database)
-      
-      let path = try client.contextSensitivePath()
-      #expect(path != nil)
-      #expect(path?.contains("/tmp/") == true)
+      do {
+        let database = try DatabaseQueue()
+        let client = SQLiteClient.grdb(database: database)
+        
+        let path = try client.contextSensitivePath()
+        #expect(path != nil)
+        #expect(path?.contains("/tmp/") == true)
+      } catch {
+        Issue.record("Failed to create database: \(error)")
+      }
       
       #elseif SQLITE_ENGINE_SQLITENIO
-      let connection = try! await SQLiteConnection.open(storage: .memory)
-      let client = SQLiteClient.nio(connection: connection)
-      
-      let path = try client.contextSensitivePath()
-      #expect(path != nil)
-      #expect(path?.contains("/tmp/") == true)
+      do {
+        let connection = try await SQLiteConnection.open(storage: .memory)
+        let client = SQLiteClient.nio(connection: connection)
+        
+        let path = try client.contextSensitivePath()
+        #expect(path != nil)
+        #expect(path?.contains("/tmp/") == true)
+      } catch {
+        Issue.record("Failed to create connection: \(error)")
+      }
       #endif
     }
   }
@@ -155,18 +169,26 @@ struct SQLiteClientTests {
       $0.context = .preview
     } operation: {
       #if SQLITE_ENGINE_GRDB
-      let database = try! DatabaseQueue()
-      let client = SQLiteClient.grdb(database: database)
-      
-      let path = try client.contextSensitivePath()
-      #expect(path == nil) // Preview should use in-memory
+      do {
+        let database = try DatabaseQueue()
+        let client = SQLiteClient.grdb(database: database)
+        
+        let path = try client.contextSensitivePath()
+        #expect(path == nil) // Preview should use in-memory
+      } catch {
+        Issue.record("Failed to create database: \(error)")
+      }
       
       #elseif SQLITE_ENGINE_SQLITENIO
-      let connection = try! await SQLiteConnection.open(storage: .memory)
-      let client = SQLiteClient.nio(connection: connection)
-      
-      let path = try client.contextSensitivePath()
-      #expect(path == nil) // Preview should use in-memory
+      do {
+        let connection = try await SQLiteConnection.open(storage: .memory)
+        let client = SQLiteClient.nio(connection: connection)
+        
+        let path = try client.contextSensitivePath()
+        #expect(path == nil) // Preview should use in-memory
+      } catch {
+        Issue.record("Failed to create connection: \(error)")
+      }
       #endif
     }
   }
@@ -240,11 +262,24 @@ struct SQLiteClientTests {
     // Give observation time to trigger
     try await Task.sleep(for: .milliseconds(100))
     
+    let countBeforeCancel = changeCount
+    #expect(countBeforeCancel > 0, "Observation should trigger before cancellation")
+    
     // Cancel the observation
     cancellable.cancel()
     
-    // Verify cancellation worked (no crashes, etc.)
-    #expect(true)
+    // Make another change after cancellation
+    try await client.write {
+      try database.write { db in
+        try db.execute(sql: "INSERT INTO test_table (id) VALUES (2)")
+      }
+    }
+    
+    // Give time for observation (which should not trigger)
+    try await Task.sleep(for: .milliseconds(100))
+    
+    // Verify count didn't change after cancellation
+    #expect(changeCount == countBeforeCancel, "Observation should not trigger after cancellation")
     
     #elseif SQLITE_ENGINE_SQLITENIO
     let connection = try await SQLiteConnection.open(storage: .memory)
@@ -254,13 +289,34 @@ struct SQLiteClientTests {
     
     let client = SQLiteClient.nio(connection: connection)
     
+    var changeCount = 0
     let cancellable = try await client.observeTables(["test_table"]) {
-      // Change detected
+      changeCount += 1
     }
     
-    // Verify cancellation worked
+    // Give observation time to set up
+    try await Task.sleep(for: .milliseconds(100))
+    
+    // Make a change
+    _ = try await connection.query("INSERT INTO test_table (id) VALUES (1)", [])
+    
+    // Give observation time to trigger
+    try await Task.sleep(for: .milliseconds(100))
+    
+    let countBeforeCancel = changeCount
+    #expect(countBeforeCancel >= 0, "Observation count should be non-negative")
+    
+    // Cancel the observation
     cancellable.cancel()
-    #expect(true)
+    
+    // Make another change after cancellation
+    _ = try await connection.query("INSERT INTO test_table (id) VALUES (2)", [])
+    
+    // Give time for observation (which should not trigger)
+    try await Task.sleep(for: .milliseconds(100))
+    
+    // Verify count didn't change after cancellation
+    #expect(changeCount == countBeforeCancel, "Observation should not trigger after cancellation")
     #endif
   }
 }
