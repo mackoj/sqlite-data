@@ -134,12 +134,12 @@ struct IntegrationTests {
     }
 
     @Test func countAggregate() async throws {
-      let count = try await User.count.fetchOne(connection) ?? 0
+      let count = try await User.count().fetchOne(connection) ?? 0
       #expect(count == 3)
     }
 
     @Test func transactionRollback() async throws {
-      let initialCount = try await User.count.fetchOne(connection) ?? 0
+      let initialCount = try await User.count().fetchOne(connection) ?? 0
       
       // Attempt a transaction that will fail
       do {
@@ -157,7 +157,7 @@ struct IntegrationTests {
       }
       
       // Verify rollback
-      let finalCount = try await User.count.fetchOne(connection) ?? 0
+      let finalCount = try await User.count().fetchOne(connection) ?? 0
       #expect(finalCount == initialCount)
     }
 
@@ -185,11 +185,12 @@ struct IntegrationTests {
         // Main transaction should still succeed
       }
       
-      @FetchAll(User.all) var users
-      try await $users.load()
+      // Verify results with direct query
+      let rows = try await connection.query("SELECT name FROM \"User\" WHERE name = ?", [.text("Main User")])
+      #expect(rows.count > 0)
       
-      #expect(users.contains { $0.name == "Main User" })
-      #expect(!users.contains { $0.name == "Savepoint User" })
+      let savepointRows = try await connection.query("SELECT name FROM \"User\" WHERE name = ?", [.text("Savepoint User")])
+      #expect(savepointRows.count == 0)
     }
   #endif
 }
@@ -263,30 +264,41 @@ struct IntegrationTests {
 
   extension SQLiteConnection {
     fileprivate static func nioTestConnection() throws -> SQLiteConnection {
-      try Task {
-        let connection = try await SQLiteConnection.open(storage: .memory)
-        
-        // Create table
-        try await connection.query("""
-          CREATE TABLE "User" (
-            "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-            "name" TEXT NOT NULL,
-            "email" TEXT NOT NULL
-          )
-          """, [])
-        
-        // Insert test data
-        try await connection.transaction { conn in
-          for id in 1...3 {
-            try await conn.query(
-              "INSERT INTO \"User\" (name, email) VALUES (?, ?)",
-              [.text("User \(id)"), .text("user\(id)@example.com")]
+      let semaphore = DispatchSemaphore(value: 0)
+      var result: Result<SQLiteConnection, Error>?
+      
+      Task {
+        do {
+          let connection = try await SQLiteConnection.open(storage: .memory)
+          
+          // Create table
+          try await connection.query("""
+            CREATE TABLE "User" (
+              "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+              "name" TEXT NOT NULL,
+              "email" TEXT NOT NULL
             )
+            """, [])
+          
+          // Insert test data
+          try await connection.transaction { conn in
+            for id in 1...3 {
+              try await conn.query(
+                "INSERT INTO \"User\" (name, email) VALUES (?, ?)",
+                [.text("User \(id)"), .text("user\(id)@example.com")]
+              )
+            }
           }
+          
+          result = .success(connection)
+        } catch {
+          result = .failure(error)
         }
-        
-        return connection
-      }.value
+        semaphore.signal()
+      }
+      
+      semaphore.wait()
+      return try result!.get()
     }
   }
 #endif

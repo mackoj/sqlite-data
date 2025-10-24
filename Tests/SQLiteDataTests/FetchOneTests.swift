@@ -311,29 +311,40 @@ struct FetchOneTests {
 
   extension SQLiteConnection {
     fileprivate static func nioTestConnection() throws -> SQLiteConnection {
-      try Task {
-        let connection = try await SQLiteConnection.open(storage: .memory)
-        
-        // Create table
-        try await connection.query("""
-          CREATE TABLE "Record" (
-            "id" INTEGER PRIMARY KEY,
-            "date" TEXT NOT NULL
-          )
-          """, [])
-        
-        // Insert test data
-        try await connection.transaction { conn in
-          for id in 1...3 {
-            try await conn.query(
-              "INSERT INTO \"Record\" (id, date) VALUES (?, ?)",
-              [.integer(id), .text(Date(timeIntervalSince1970: 42).iso8601String)]
+      let semaphore = DispatchSemaphore(value: 0)
+      var result: Result<SQLiteConnection, Error>?
+      
+      Task {
+        do {
+          let connection = try await SQLiteConnection.open(storage: .memory)
+          
+          // Create table
+          try await connection.query("""
+            CREATE TABLE "Record" (
+              "id" INTEGER PRIMARY KEY,
+              "date" TEXT NOT NULL
             )
+            """, [])
+          
+          // Insert test data
+          try await connection.transaction { conn in
+            for id in 1...3 {
+              try await conn.query(
+                "INSERT INTO \"Record\" (id, date) VALUES (?, ?)",
+                [.integer(id), .text(Date(timeIntervalSince1970: 42).iso8601String)]
+              )
+            }
           }
+          
+          result = .success(connection)
+        } catch {
+          result = .failure(error)
         }
-        
-        return connection
-      }.value
+        semaphore.signal()
+      }
+      
+      semaphore.wait()
+      return try result!.get()
     }
   }
 #endif
