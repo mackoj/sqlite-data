@@ -1,3 +1,4 @@
+#if canImport(CloudKit)
 import CloudKit
 import DependenciesTestSupport
 import OrderedCollections
@@ -239,3 +240,4 @@ private let currentUserRecordID = CKRecord.ID(
 // NB: This conformance is only used for ease of testing. In general it is not appropriate to
 // conform integer types to this protocol.
 extension Int: IdentifierStringConvertible {}
+#endif
