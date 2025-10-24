@@ -9,7 +9,7 @@ import Testing
 
 @MainActor
 @Suite(
-  .dependency(\.defaultSQLiteConnection, try await .nioConnection()),
+  .dependency(\.defaultSQLiteConnection, try .nioConnection()),
   .snapshots(record: .failed),
 )
 struct AssertQueryNIOTests {
@@ -88,28 +88,30 @@ private struct Record: Equatable, Sendable {
 }
 
 extension SQLiteConnection {
-  fileprivate static func nioConnection() async throws -> SQLiteConnection {
-    let connection = try await SQLiteConnection.open(storage: .memory)
-    
-    // Create table
-    try await connection.query("""
-      CREATE TABLE "Record" (
-        "id" INTEGER PRIMARY KEY,
-        "date" TEXT NOT NULL
-      )
-      """, [])
-    
-    // Insert test data
-    try await connection.transaction { conn in
-      for id in 1...3 {
-        try await conn.query(
-          "INSERT INTO \"Record\" (id, date) VALUES (?, ?)",
-          [.integer(id), .text(Date(timeIntervalSince1970: 42).iso8601String)]
+  fileprivate static func nioConnection() throws -> SQLiteConnection {
+    try Task {
+      let connection = try await SQLiteConnection.open(storage: .memory)
+      
+      // Create table
+      try await connection.query("""
+        CREATE TABLE "Record" (
+          "id" INTEGER PRIMARY KEY,
+          "date" TEXT NOT NULL
         )
+        """, [])
+      
+      // Insert test data
+      try await connection.transaction { conn in
+        for id in 1...3 {
+          try await conn.query(
+            "INSERT INTO \"Record\" (id, date) VALUES (?, ?)",
+            [.integer(id), .text(Date(timeIntervalSince1970: 42).iso8601String)]
+          )
+        }
       }
-    }
-    
-    return connection
+      
+      return connection
+    }.value
   }
 }
 #endif

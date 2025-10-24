@@ -5,13 +5,13 @@ import SQLiteData
 import SQLiteNIO
 import Testing
 
-@Suite(.dependency(\.defaultSQLiteConnection, try await .nioTestConnection()))
+@Suite(.dependency(\.defaultSQLiteConnection, try .nioTestConnection()))
 struct IntegrationNIOTests {
   @Dependency(\.defaultSQLiteConnection) var connection
 
   @Test func insertAndFetch() async throws {
     // Insert a new record
-    try await connection.transaction { conn in
+    _ = try await connection.transaction { conn in
       try await conn.query(
         "INSERT INTO \"User\" (name, email) VALUES (?, ?)",
         [.text("Alice"), .text("alice@example.com")]
@@ -28,7 +28,7 @@ struct IntegrationNIOTests {
 
   @Test func updateAndFetch() async throws {
     // Update a record
-    try await connection.transaction { conn in
+    _ = try await connection.transaction { conn in
       try await conn.query(
         "UPDATE \"User\" SET name = ? WHERE id = ?",
         [.text("Updated User"), .integer(1)]
@@ -44,7 +44,7 @@ struct IntegrationNIOTests {
 
   @Test func deleteAndFetch() async throws {
     // Delete a record
-    try await connection.transaction { conn in
+    _ = try await connection.transaction { conn in
       try await conn.query(
         "DELETE FROM \"User\" WHERE id = ?",
         [.integer(2)]
@@ -73,8 +73,7 @@ struct IntegrationNIOTests {
   }
 
   @Test func countAggregate() async throws {
-    @FetchOne(User.count) var count = 0
-    try await $count.load()
+    let count = try await User.count.fetchOne(connection) ?? 0
     #expect(count == 3)
   }
 
@@ -83,7 +82,7 @@ struct IntegrationNIOTests {
     
     // Attempt a transaction that will fail
     do {
-      try await connection.transaction { conn in
+      _ = try await connection.transaction { conn in
         try await conn.query(
           "INSERT INTO \"User\" (name, email) VALUES (?, ?)",
           [.text("Temp User"), .text("temp@example.com")]
@@ -102,7 +101,7 @@ struct IntegrationNIOTests {
   }
 
   @Test func savepoint() async throws {
-    try await connection.transaction { conn in
+    _ = try await connection.transaction { conn in
       // Insert in main transaction
       try await conn.query(
         "INSERT INTO \"User\" (name, email) VALUES (?, ?)",
@@ -111,7 +110,7 @@ struct IntegrationNIOTests {
       
       // Try savepoint that fails
       do {
-        try await conn.savepoint("test") { conn in
+        _ = try await conn.savepoint("test") { conn in
           try await conn.query(
             "INSERT INTO \"User\" (name, email) VALUES (?, ?)",
             [.text("Savepoint User"), .text("savepoint@example.com")]
@@ -145,29 +144,31 @@ private enum TestError: Error {
 }
 
 extension SQLiteConnection {
-  fileprivate static func nioTestConnection() async throws -> SQLiteConnection {
-    let connection = try await SQLiteConnection.open(storage: .memory)
-    
-    // Create table
-    try await connection.query("""
-      CREATE TABLE "User" (
-        "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-        "name" TEXT NOT NULL,
-        "email" TEXT NOT NULL
-      )
-      """, [])
-    
-    // Insert test data
-    try await connection.transaction { conn in
-      for id in 1...3 {
-        try await conn.query(
-          "INSERT INTO \"User\" (name, email) VALUES (?, ?)",
-          [.text("User \(id)"), .text("user\(id)@example.com")]
+  fileprivate static func nioTestConnection() throws -> SQLiteConnection {
+    try Task {
+      let connection = try await SQLiteConnection.open(storage: .memory)
+      
+      // Create table
+      try await connection.query("""
+        CREATE TABLE "User" (
+          "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+          "name" TEXT NOT NULL,
+          "email" TEXT NOT NULL
         )
+        """, [])
+      
+      // Insert test data
+      try await connection.transaction { conn in
+        for id in 1...3 {
+          try await conn.query(
+            "INSERT INTO \"User\" (name, email) VALUES (?, ?)",
+            [.text("User \(id)"), .text("user\(id)@example.com")]
+          )
+        }
       }
-    }
-    
-    return connection
+      
+      return connection
+    }.value
   }
 }
 #endif
