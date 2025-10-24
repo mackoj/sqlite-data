@@ -21,10 +21,10 @@ This document outlines the implementation of SPM traits to enable compile-time e
    - Added `SQLiteNIO` trait
    - Made GRDB dependency conditional on `GRDB` trait
    - Made SQLiteNIO dependency conditional on `SQLiteNIO` trait
-   - Added compilation flags: `SQLITE_ENGINE_GRDB` and `SQLITE_ENGINE_SQLITENO`
+   - Added compilation flags: `SQLITE_ENGINE_GRDB` and `SQLITE_ENGINE_SQLITENIO`
 
 2. **SQLiteNIO Files**
-   - Replaced `#if canImport(SQLiteNIO)` with `#if SQLITE_ENGINE_SQLITENO`
+   - Replaced `#if canImport(SQLiteNIO)` with `#if SQLITE_ENGINE_SQLITENIO`
    - All SQLiteNIO-specific files now use the trait-based flag
 
 3. **GRDB Directory Files**
@@ -58,7 +58,7 @@ swift test --experimental-enable-traits --enable-trait GRDB
 ### Compilation Flags
 
 - `SQLITE_ENGINE_GRDB` - Defined when GRDB trait is enabled
-- `SQLITE_ENGINE_SQLITENO` - Defined when SQLiteNIO trait is enabled
+- `SQLITE_ENGINE_SQLITENIO` - Defined when SQLiteNIO trait is enabled
 
 ### File Organization
 
@@ -66,13 +66,13 @@ swift test --experimental-enable-traits --enable-trait GRDB
 Sources/SQLiteData/
 ├── FetchAll.swift                    # Core struct + conditional initializers
 ├── FetchOne.swift                    # Core struct + conditional initializers
-├── FetchAll+SQLiteNIO.swift          # #if SQLITE_ENGINE_SQLITENO
-├── FetchOne+SQLiteNIO.swift          # #if SQLITE_ENGINE_SQLITENO
+├── FetchAll+SQLiteNIO.swift          # #if SQLITE_ENGINE_SQLITENIO
+├── FetchOne+SQLiteNIO.swift          # #if SQLITE_ENGINE_SQLITENIO
 ├── StructuredQueries+GRDB/           # All files: #if SQLITE_ENGINE_GRDB
 │   ├── DefaultDatabase.swift
 │   ├── Statement+GRDB.swift
 │   └── ...
-├── SQLiteNIO/                        # All files: #if SQLITE_ENGINE_SQLITENO
+├── SQLiteNIO/                        # All files: #if SQLITE_ENGINE_SQLITENIO
 │   ├── DefaultConnection.swift
 │   ├── Statement+SQLiteNIO.swift
 │   └── ...
@@ -132,7 +132,7 @@ struct MyTests { ... }
 #endif
 
 // SQLiteNIO tests  
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
 @Suite(.dependency(\.defaultSQLiteConnection, try .nioConnection()))
 struct MyNIOTests { ... }
 #endif
@@ -246,7 +246,7 @@ Choose your engine by enabling the appropriate trait in your Package.swift:
    - Proposal: Enable GRDB by default for backward compatibility
    
 2. **Validation?** Should we add compile-time validation that at least one trait is enabled?
-   - Proposal: Add `#if !SQLITE_ENGINE_GRDB && !SQLITE_ENGINE_SQLITENO` with `#error`
+   - Proposal: Add `#if !SQLITE_ENGINE_GRDB && !SQLITE_ENGINE_SQLITENIO` with `#error`
    
 3. **Test organization?** Should tests be split by trait?
    - Proposal: Keep current structure but add guards

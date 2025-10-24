@@ -1,31 +1,13 @@
-import XCTest
-
-#if canImport(SQLiteNIO)
-import NIOCore
-import NIOPosix
+#if SQLITE_ENGINE_SQLITENO
+import Foundation
+import SQLiteData
 import SQLiteNIO
-@testable import SQLiteData
+import Testing
 
-final class SQLiteNIOObserverTests: XCTestCase {
+@Suite struct SQLiteNIOObserverTests {
   
-  var threadPool: NIOThreadPool!
-  var eventLoopGroup: EventLoopGroup!
-  var connection: SQLiteConnection!
-  
-  override func setUp() async throws {
-    try await super.setUp()
-    
-    // Setup NIO infrastructure
-    threadPool = NIOThreadPool(numberOfThreads: 1)
-    threadPool.start()
-    eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-    
-    // Create in-memory database
-    connection = try await SQLiteConnection.open(
-      storage: .memory,
-      threadPool: threadPool,
-      on: eventLoopGroup.any()
-    ).get()
+  func createTestConnection() async throws -> SQLiteConnection {
+    let connection = try await SQLiteConnection.open(storage: .memory)
     
     // Create test table
     try await connection.query("""
@@ -34,26 +16,22 @@ final class SQLiteNIOObserverTests: XCTestCase {
         name TEXT NOT NULL,
         email TEXT NOT NULL
       )
-    """, [])
+      """, [])
+    
+    return connection
   }
   
-  override func tearDown() async throws {
-    try await connection.close()
-    try await eventLoopGroup.shutdownGracefully()
-    try threadPool.syncShutdownGracefully()
-    try await super.tearDown()
-  }
-  
-  func testObserverReceivesInsertNotification() async throws {
+  @Test func observerReceivesInsertNotification() async throws {
+    let connection = try await createTestConnection()
     let observer = SQLiteNIOObserver(connection: connection)
     
-    let expectation = XCTestExpectation(description: "Observer receives insert notification")
     var receivedChange: SQLiteNIOObserver.Change?
+    let changeReceived = Confirmation("Observer receives insert notification", expectedCount: 1)
     
     // Subscribe to changes
     let subscription = try await observer.subscribe(tables: ["users"]) { change in
       receivedChange = change
-      expectation.fulfill()
+      changeReceived.confirm()
     }
     
     // Insert a row
@@ -63,18 +41,25 @@ final class SQLiteNIOObserverTests: XCTestCase {
     )
     
     // Wait for notification
-    await fulfillment(of: [expectation], timeout: 2.0)
+    await confirmation("Insert notification received", expectedCount: 1) { confirmation in
+      try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+      if receivedChange != nil {
+        confirmation()
+      }
+    }
     
     // Verify the change
-    XCTAssertNotNil(receivedChange)
-    XCTAssertEqual(receivedChange?.tableName, "users")
-    XCTAssertEqual(receivedChange?.type, .insert)
-    XCTAssertTrue(receivedChange?.rowID ?? 0 > 0)
+    #expect(receivedChange != nil)
+    #expect(receivedChange?.tableName == "users")
+    #expect(receivedChange?.type == .insert)
+    #expect((receivedChange?.rowID ?? 0) > 0)
     
     subscription.cancel()
+    try await connection.close()
   }
   
-  func testObserverReceivesUpdateNotification() async throws {
+  @Test func observerReceivesUpdateNotification() async throws {
+    let connection = try await createTestConnection()
     let observer = SQLiteNIOObserver(connection: connection)
     
     // Insert initial data
@@ -83,14 +68,12 @@ final class SQLiteNIOObserverTests: XCTestCase {
       [.text("Bob"), .text("bob@example.com")]
     )
     
-    let expectation = XCTestExpectation(description: "Observer receives update notification")
     var receivedChange: SQLiteNIOObserver.Change?
     
     // Subscribe to changes
     let subscription = try await observer.subscribe(tables: ["users"]) { change in
       if change.type == .update {
         receivedChange = change
-        expectation.fulfill()
       }
     }
     
@@ -101,17 +84,19 @@ final class SQLiteNIOObserverTests: XCTestCase {
     )
     
     // Wait for notification
-    await fulfillment(of: [expectation], timeout: 2.0)
+    try await Task.sleep(nanoseconds: 100_000_000) // 100ms
     
     // Verify the change
-    XCTAssertNotNil(receivedChange)
-    XCTAssertEqual(receivedChange?.tableName, "users")
-    XCTAssertEqual(receivedChange?.type, .update)
+    #expect(receivedChange != nil)
+    #expect(receivedChange?.tableName == "users")
+    #expect(receivedChange?.type == .update)
     
     subscription.cancel()
+    try await connection.close()
   }
   
-  func testObserverReceivesDeleteNotification() async throws {
+  @Test func observerReceivesDeleteNotification() async throws {
+    let connection = try await createTestConnection()
     let observer = SQLiteNIOObserver(connection: connection)
     
     // Insert initial data
@@ -120,14 +105,12 @@ final class SQLiteNIOObserverTests: XCTestCase {
       [.text("Charlie"), .text("charlie@example.com")]
     )
     
-    let expectation = XCTestExpectation(description: "Observer receives delete notification")
     var receivedChange: SQLiteNIOObserver.Change?
     
     // Subscribe to changes
     let subscription = try await observer.subscribe(tables: ["users"]) { change in
       if change.type == .delete {
         receivedChange = change
-        expectation.fulfill()
       }
     }
     
@@ -138,17 +121,19 @@ final class SQLiteNIOObserverTests: XCTestCase {
     )
     
     // Wait for notification
-    await fulfillment(of: [expectation], timeout: 2.0)
+    try await Task.sleep(nanoseconds: 100_000_000) // 100ms
     
     // Verify the change
-    XCTAssertNotNil(receivedChange)
-    XCTAssertEqual(receivedChange?.tableName, "users")
-    XCTAssertEqual(receivedChange?.type, .delete)
+    #expect(receivedChange != nil)
+    #expect(receivedChange?.tableName == "users")
+    #expect(receivedChange?.type == .delete)
     
     subscription.cancel()
+    try await connection.close()
   }
   
-  func testObserverFiltersTableChanges() async throws {
+  @Test func observerFiltersTableChanges() async throws {
+    let connection = try await createTestConnection()
     let observer = SQLiteNIOObserver(connection: connection)
     
     // Create another table
@@ -157,16 +142,13 @@ final class SQLiteNIOObserverTests: XCTestCase {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL
       )
-    """, [])
+      """, [])
     
-    let expectation = XCTestExpectation(description: "Observer receives only users table changes")
-    expectation.expectedFulfillmentCount = 1
     var receivedChanges: [SQLiteNIOObserver.Change] = []
     
     // Subscribe only to users table
     let subscription = try await observer.subscribe(tables: ["users"]) { change in
       receivedChanges.append(change)
-      expectation.fulfill()
     }
     
     // Insert into posts (should not trigger)
@@ -185,29 +167,31 @@ final class SQLiteNIOObserverTests: XCTestCase {
     )
     
     // Wait for notification
-    await fulfillment(of: [expectation], timeout: 2.0)
+    try await Task.sleep(nanoseconds: 100_000_000) // 100ms
     
     // Verify we only got the users table change
-    XCTAssertEqual(receivedChanges.count, 1)
-    XCTAssertEqual(receivedChanges.first?.tableName, "users")
+    #expect(receivedChanges.count == 1)
+    #expect(receivedChanges.first?.tableName == "users")
     
     subscription.cancel()
+    try await connection.close()
   }
   
-  func testMultipleSubscribers() async throws {
+  @Test func multipleSubscribers() async throws {
+    let connection = try await createTestConnection()
     let observer = SQLiteNIOObserver(connection: connection)
     
-    let expectation1 = XCTestExpectation(description: "First subscriber receives notification")
-    let expectation2 = XCTestExpectation(description: "Second subscriber receives notification")
+    var subscriber1Notified = false
+    var subscriber2Notified = false
     
     // Subscribe first
     let subscription1 = try await observer.subscribe(tables: ["users"]) { _ in
-      expectation1.fulfill()
+      subscriber1Notified = true
     }
     
     // Subscribe second
     let subscription2 = try await observer.subscribe(tables: ["users"]) { _ in
-      expectation2.fulfill()
+      subscriber2Notified = true
     }
     
     // Insert a row - both should be notified
@@ -216,26 +200,26 @@ final class SQLiteNIOObserverTests: XCTestCase {
       [.text("Eve"), .text("eve@example.com")]
     )
     
-    // Wait for both notifications
-    await fulfillment(of: [expectation1, expectation2], timeout: 2.0)
+    // Wait for notifications
+    try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+    
+    #expect(subscriber1Notified)
+    #expect(subscriber2Notified)
     
     subscription1.cancel()
     subscription2.cancel()
+    try await connection.close()
   }
   
-  func testSubscriptionCancellation() async throws {
+  @Test func subscriptionCancellation() async throws {
+    let connection = try await createTestConnection()
     let observer = SQLiteNIOObserver(connection: connection)
-    
-    let expectation = XCTestExpectation(description: "Observer receives notification before cancellation")
-    expectation.expectedFulfillmentCount = 1
-    expectation.assertForOverFulfill = true
     
     var notificationCount = 0
     
     // Subscribe
     let subscription = try await observer.subscribe(tables: ["users"]) { _ in
       notificationCount += 1
-      expectation.fulfill()
     }
     
     // Insert first row - should trigger
@@ -245,7 +229,7 @@ final class SQLiteNIOObserverTests: XCTestCase {
     )
     
     // Wait for notification
-    await fulfillment(of: [expectation], timeout: 2.0)
+    try await Task.sleep(nanoseconds: 100_000_000) // 100ms
     
     // Cancel subscription
     subscription.cancel()
@@ -260,7 +244,9 @@ final class SQLiteNIOObserverTests: XCTestCase {
     try await Task.sleep(nanoseconds: 100_000_000) // 100ms
     
     // Verify we only got one notification
-    XCTAssertEqual(notificationCount, 1)
+    #expect(notificationCount == 1)
+    
+    try await connection.close()
   }
 }
 

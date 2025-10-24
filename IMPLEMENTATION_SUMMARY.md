@@ -170,7 +170,7 @@ All SQLiteNIO code is conditionally compiled (`#if canImport(SQLiteNIO)`) and do
 Currently, tests fail because they depend on CloudKit (iOS/macOS only). This needs to be addressed with conditional compilation:
 
 ```swift
-#if canImport(CloudKit)
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
 // CloudKit tests
 #endif
 ```

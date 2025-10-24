@@ -1,4 +1,4 @@
-#if canImport(CloudKit)
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
   import CloudKit
 
   package protocol CloudDatabase: AnyObject, Hashable, Sendable {

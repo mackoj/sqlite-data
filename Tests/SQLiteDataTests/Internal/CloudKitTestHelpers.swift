@@ -1,3 +1,4 @@
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
 import CloudKit
 import ConcurrencyExtras
 import CustomDump
@@ -277,3 +278,4 @@ extension MockSyncEngineState {
   }
 
 }
+#endif

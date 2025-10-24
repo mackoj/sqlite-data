@@ -1,4 +1,4 @@
-#if canImport(CloudKit)
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
   @Table("sqlite_schema")
   package struct SQLiteSchema {
     package let type: ObjectType

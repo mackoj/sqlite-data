@@ -2,7 +2,7 @@
 @_exported import StructuredQueriesSQLite
 
 // Compile-time validation that at least one engine trait is enabled
-#if !SQLITE_ENGINE_GRDB && !SQLITE_ENGINE_SQLITENO
+#if !SQLITE_ENGINE_GRDB && !SQLITE_ENGINE_SQLITENIO
 #error("At least one SQLite engine trait must be enabled. Use --traits GRDB or --traits SQLiteNIO when building.")
 #endif
 
@@ -16,4 +16,10 @@
 @_exported import protocol GRDB.DatabaseReader
 @_exported import protocol GRDB.DatabaseWriter
 @_exported import protocol GRDB.ValueObservationScheduler
+#endif
+
+#if SQLITE_ENGINE_SQLITENIO
+@_exported import NIOCore
+@_exported import NIOPosix
+@_exported import SQLiteNIO
 #endif

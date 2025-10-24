@@ -1,4 +1,4 @@
-#if canImport(CloudKit) && canImport(UIKit)
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB && canImport(UIKit)
   import UIKit
 
   private enum DefaultNotificationCenterKey: DependencyKey {

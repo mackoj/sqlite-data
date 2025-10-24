@@ -1,4 +1,4 @@
-#if canImport(CloudKit)
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
   import CloudKit
   import Foundation
 

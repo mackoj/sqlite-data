@@ -1,4 +1,4 @@
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
 /// SQLiteRow Decoder
 ///
 /// Provides Decodable support for SQLiteNIO's SQLiteRow, similar to GRDB's FetchableRecord.

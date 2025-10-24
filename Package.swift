@@ -35,7 +35,7 @@ let package = Package(
       description: "Use SQLiteNIO as the SQLite engine.",
       enabledTraits: []
     ),
-    .default(enabledTraits: ["GRDB"]),
+    .default(enabledTraits: ["SQLiteNIO"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-collections", from: "1.0.0"),
@@ -76,7 +76,7 @@ let package = Package(
       ],
       swiftSettings: [
         .define("SQLITE_ENGINE_GRDB", .when(traits: ["GRDB"])),
-        .define("SQLITE_ENGINE_SQLITENO", .when(traits: ["SQLiteNIO"])),
+        .define("SQLITE_ENGINE_SQLITENIO", .when(traits: ["SQLiteNIO"])),
       ]
     ),
     .target(
@@ -88,6 +88,10 @@ let package = Package(
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
         .product(name: "StructuredQueriesTestSupport", package: "swift-structured-queries"),
+      ],
+      swiftSettings: [
+        .define("SQLITE_ENGINE_GRDB", .when(traits: ["GRDB"])),
+        .define("SQLITE_ENGINE_SQLITENIO", .when(traits: ["SQLiteNIO"])),
       ]
     ),
     .testTarget(
@@ -99,6 +103,10 @@ let package = Package(
         .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
         .product(name: "SnapshotTestingCustomDump", package: "swift-snapshot-testing"),
         .product(name: "StructuredQueries", package: "swift-structured-queries"),
+      ],
+      swiftSettings: [
+        .define("SQLITE_ENGINE_GRDB", .when(traits: ["GRDB"])),
+        .define("SQLITE_ENGINE_SQLITENIO", .when(traits: ["SQLiteNIO"])),
       ]
     ),
   ],

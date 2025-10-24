@@ -1,4 +1,4 @@
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
 /// Example Usage of SQLiteNIO Integration
 ///
 /// This file provides examples of how to use the SQLiteNIO-based database abstractions.

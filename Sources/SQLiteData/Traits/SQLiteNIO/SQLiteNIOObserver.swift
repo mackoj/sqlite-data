@@ -1,4 +1,4 @@
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
 /// SQLiteNIO Change Observer
 ///
 /// This actor provides database change observation using SQLite's update hooks.
