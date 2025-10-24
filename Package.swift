@@ -88,6 +88,10 @@ let package = Package(
         .product(name: "Dependencies", package: "swift-dependencies"),
         .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
         .product(name: "StructuredQueriesTestSupport", package: "swift-structured-queries"),
+      ],
+      swiftSettings: [
+        .define("SQLITE_ENGINE_GRDB", .when(traits: ["GRDB"])),
+        .define("SQLITE_ENGINE_SQLITENIO", .when(traits: ["SQLiteNIO"])),
       ]
     ),
     .testTarget(
