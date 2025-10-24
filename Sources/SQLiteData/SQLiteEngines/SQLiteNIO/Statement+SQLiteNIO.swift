@@ -1,4 +1,4 @@
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
 import Foundation
 import NIOCore
 import StructuredQueriesCore

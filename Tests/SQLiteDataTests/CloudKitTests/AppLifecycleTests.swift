@@ -1,4 +1,4 @@
-#if canImport(CloudKit) && canImport(UIKit)
+#if canImport(CloudKit) && GRDB && canImport(UIKit)
   import CloudKit
   import CustomDump
   import Foundation

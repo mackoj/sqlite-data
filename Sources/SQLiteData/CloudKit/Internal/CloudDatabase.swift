@@ -1,4 +1,4 @@
-#if canImport(CloudKit)
+#if canImport(CloudKit) && GRDB
   import CloudKit
 
   package protocol CloudDatabase: AnyObject, Hashable, Sendable {

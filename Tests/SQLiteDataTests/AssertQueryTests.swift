@@ -5,7 +5,7 @@ import SQLiteDataTestSupport
 import SnapshotTesting
 import Testing
 
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
   import SQLiteNIO
 #endif
 
@@ -15,7 +15,7 @@ import Testing
     .dependency(\.defaultDatabase, try .database()),
     .snapshots(record: .failed),
   )
-#elseif SQLITE_ENGINE_SQLITENO
+#elseif SQLITE_ENGINE_SQLITENIO
   @Suite(
     .dependency(\.defaultSQLiteConnection, try .nioConnection()),
     .snapshots(record: .failed),
@@ -36,7 +36,7 @@ struct AssertQueryTests {
         └───┘
         """
       }
-    #elseif SQLITE_ENGINE_SQLITENO
+    #elseif SQLITE_ENGINE_SQLITENIO
       await assertQueryNIO(
         Record.all.select(\.id)
       ) {
@@ -66,7 +66,7 @@ struct AssertQueryTests {
         └────────────────────────────────────────┘
         """
       }
-    #elseif SQLITE_ENGINE_SQLITENO
+    #elseif SQLITE_ENGINE_SQLITENIO
       await assertQueryNIO(
         Record.where { $0.id == 1 }
       ) {
@@ -98,7 +98,7 @@ struct AssertQueryTests {
         └───┴────────────────────────────────┘
         """
       }
-    #elseif SQLITE_ENGINE_SQLITENO
+    #elseif SQLITE_ENGINE_SQLITENIO
       await assertQueryNIO(
         Record.all
           .update { $0.date = Date(timeIntervalSince1970: 45) }
@@ -133,7 +133,7 @@ struct AssertQueryTests {
         └────────────────────────────────────────┘
         """
       }
-    #elseif SQLITE_ENGINE_SQLITENO
+    #elseif SQLITE_ENGINE_SQLITENIO
       await assertQueryNIO(
         Record
           .where { $0.id == 1 }
@@ -162,7 +162,7 @@ struct AssertQueryTests {
         (No results)
         """
       }
-    #elseif SQLITE_ENGINE_SQLITENO
+    #elseif SQLITE_ENGINE_SQLITENIO
       await assertQueryNIO(
         Record.all.where { $0.id == -1 }.select(\.id)
       ) {
@@ -177,6 +177,7 @@ struct AssertQueryTests {
   @available(iOS 17, macOS 14, tvOS 17, watchOS 10, *)
   func assertQueryFailsNoResultsNonEmptySnapshot() {
     withKnownIssue {
+#if SQLITE_ENGINE_GRDB
       assertQuery(
         Record.all.where { _ in false }
       ) {
@@ -184,6 +185,15 @@ struct AssertQueryTests {
         XYZ
         """
       }
+#elseif SQLITE_ENGINE_SQLITENIO
+      await assertQueryNIO(
+        Record.all.where { _ in false }
+      ) {
+        """
+        XYZ
+        """
+      }
+    #endif
     }
   }
 
@@ -208,7 +218,7 @@ struct AssertQueryTests {
           └───┘
           """
         }
-      #elseif SQLITE_ENGINE_SQLITENO
+      #elseif SQLITE_ENGINE_SQLITENIO
         // SQL inclusion not yet supported for SQLiteNIO
         // Skip this test for now
       #endif
@@ -238,7 +248,7 @@ struct AssertQueryTests {
           └────────────────────────────────────────┘
           """
         }
-      #elseif SQLITE_ENGINE_SQLITENO
+      #elseif SQLITE_ENGINE_SQLITENIO
         // SQL inclusion not yet supported for SQLiteNIO
         // Skip this test for now
       #endif
@@ -252,7 +262,7 @@ private struct Record: Equatable, Sendable {
   #if SQLITE_ENGINE_GRDB
     @Column(as: Date.UnixTimeRepresentation.self)
     var date = Date(timeIntervalSince1970: 42)
-  #elseif SQLITE_ENGINE_SQLITENO
+  #elseif SQLITE_ENGINE_SQLITENIO
     let date: Date = Date(timeIntervalSince1970: 42)
   #endif
 }
@@ -278,7 +288,7 @@ private struct Record: Equatable, Sendable {
       return database
     }
   }
-#elseif SQLITE_ENGINE_SQLITENO
+#elseif SQLITE_ENGINE_SQLITENIO
   extension SQLiteConnection {
     fileprivate static func nioConnection() throws -> SQLiteConnection {
       try Task {

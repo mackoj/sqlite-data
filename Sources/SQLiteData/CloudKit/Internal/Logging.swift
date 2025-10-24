@@ -1,4 +1,4 @@
-#if DEBUG && canImport(CloudKit)
+#if DEBUG && canImport(CloudKit) && GRDB
   import CloudKit
   import TabularData
   import os

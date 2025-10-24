@@ -1,4 +1,4 @@
-#if canImport(CloudKit)
+#if canImport(CloudKit) && GRDB
   import CloudKit
 
   /// A table that tracks metadata related to synchronized data.

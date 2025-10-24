@@ -1,4 +1,4 @@
-#if canImport(CloudKit) && canImport(CryptoKit)
+#if canImport(CloudKit) && GRDB && canImport(CryptoKit)
   import CryptoKit
   import Foundation
 

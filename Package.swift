@@ -76,7 +76,7 @@ let package = Package(
       ],
       swiftSettings: [
         .define("SQLITE_ENGINE_GRDB", .when(traits: ["GRDB"])),
-        .define("SQLITE_ENGINE_SQLITENO", .when(traits: ["SQLiteNIO"])),
+        .define("SQLITE_ENGINE_SQLITENIO", .when(traits: ["SQLiteNIO"])),
       ]
     ),
     .target(

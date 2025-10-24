@@ -1,7 +1,7 @@
 import SQLiteData
 import Testing
 
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
   import DependenciesTestSupport
   import Foundation
   import SQLiteNIO
@@ -38,7 +38,7 @@ import Testing
   @Table private struct Number {
     var value = 0
   }
-#elseif SQLITE_ENGINE_SQLITENO
+#elseif SQLITE_ENGINE_SQLITENIO
   @Suite(.dependency(\.defaultSQLiteConnection, try .nioTestConnection()))
   struct QueryCursorTests {
     @Dependency(\.defaultSQLiteConnection) var connection

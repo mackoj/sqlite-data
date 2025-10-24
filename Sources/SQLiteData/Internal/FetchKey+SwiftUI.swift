@@ -46,7 +46,7 @@
     }
   #endif
 
-  #if SQLITE_ENGINE_SQLITENO
+  #if SQLITE_ENGINE_SQLITENIO
     // SQLiteNIO version of AnimatedScheduler
     // Since SQLiteNIO doesn't use the same scheduler pattern as GRDB,
     // we provide animation support through a different mechanism

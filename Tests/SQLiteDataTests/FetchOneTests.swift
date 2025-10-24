@@ -3,19 +3,19 @@ import Foundation
 import SQLiteData
 import Testing
 
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
   import SQLiteNIO
 #endif
 
 #if SQLITE_ENGINE_GRDB
   @Suite(.dependency(\.defaultDatabase, try .database()))
-#elseif SQLITE_ENGINE_SQLITENO
+#elseif SQLITE_ENGINE_SQLITENIO
   @Suite(.dependency(\.defaultSQLiteConnection, try .nioTestConnection()))
 #endif
 struct FetchOneTests {
   #if SQLITE_ENGINE_GRDB
     @Dependency(\.defaultDatabase) var database
-  #elseif SQLITE_ENGINE_SQLITENO
+  #elseif SQLITE_ENGINE_SQLITENIO
     @Dependency(\.defaultSQLiteConnection) var connection
   #endif
 
@@ -37,7 +37,7 @@ struct FetchOneTests {
       }
       #expect(record == Record(id: 1))
       #expect($record.loadError is NotFound)
-    #elseif SQLITE_ENGINE_SQLITENO
+    #elseif SQLITE_ENGINE_SQLITENIO
       @FetchOne var record = Record(id: 0, date: Date())
       try await $record.load()
       #expect(record.id == 1)
@@ -62,7 +62,7 @@ struct FetchOneTests {
       try await $record.load()
       #expect(record == nil)
       #expect($record.loadError == nil)
-    #elseif SQLITE_ENGINE_SQLITENO
+    #elseif SQLITE_ENGINE_SQLITENIO
       @FetchOne var record: Record?
       try await $record.load()
       #expect(record?.id == 1)
@@ -85,7 +85,7 @@ struct FetchOneTests {
       try await $record.load()
       #expect(record == nil)
       #expect($record.loadError == nil)
-    #elseif SQLITE_ENGINE_SQLITENO
+    #elseif SQLITE_ENGINE_SQLITENIO
       @FetchOne var record: Record? = Record(id: 0, date: Date())
       try await $record.load()
       #expect(record?.id == 1)
@@ -213,7 +213,7 @@ struct FetchOneTests {
         }
       }
     }
-  #elseif SQLITE_ENGINE_SQLITENO
+  #elseif SQLITE_ENGINE_SQLITENIO
     @Test func selectStatementInit() async throws {
       @FetchOne(Record.order(by: \.id)) var record = Record(id: 0, date: Date())
       try await $record.load()
@@ -302,7 +302,7 @@ struct FetchOneTests {
       return database
     }
   }
-#elseif SQLITE_ENGINE_SQLITENO
+#elseif SQLITE_ENGINE_SQLITENIO
   @Table
   private struct Record: Equatable, Sendable {
     let id: Int

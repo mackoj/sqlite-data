@@ -1,4 +1,4 @@
-#if canImport(CloudKit)
+#if canImport(CloudKit) && GRDB
   #if swift(>=6.2)
     public typealias _SendableMetatype = SendableMetatype
   #else

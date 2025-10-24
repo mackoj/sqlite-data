@@ -3,19 +3,19 @@ import Foundation
 import SQLiteData
 import Testing
 
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
   import SQLiteNIO
 #endif
 
 #if SQLITE_ENGINE_GRDB
   @Suite(.dependency(\.defaultDatabase, try .database()))
-#elseif SQLITE_ENGINE_SQLITENO
+#elseif SQLITE_ENGINE_SQLITENIO
   @Suite(.dependency(\.defaultSQLiteConnection, try .nioTestConnection()))
 #endif
 struct FetchAllTests {
   #if SQLITE_ENGINE_GRDB
     @Dependency(\.defaultDatabase) var database
-  #elseif SQLITE_ENGINE_SQLITENO
+  #elseif SQLITE_ENGINE_SQLITENIO
     @Dependency(\.defaultSQLiteConnection) var connection
   #endif
 
@@ -54,7 +54,7 @@ struct FetchAllTests {
 
       try await $records.load()
       #expect(records == (0...(count / 2 - 1)).map { Record(id: $0 * 2 + 1) })
-    #elseif SQLITE_ENGINE_SQLITENO
+    #elseif SQLITE_ENGINE_SQLITENIO
       let count = 100  // Reduced from 1000 for faster testing
       try await connection.query("DELETE FROM \"Record\"", [])
 
@@ -113,12 +113,12 @@ struct FetchAllTests {
           )
         )
       }
-    #elseif SQLITE_ENGINE_SQLITENO
+    #elseif SQLITE_ENGINE_SQLITENIO
       // Skip this test for SQLiteNIO as it's GRDB-specific
     #endif
   }
 
-  #if SQLITE_ENGINE_SQLITENO
+  #if SQLITE_ENGINE_SQLITENIO
     @Test func basicFetch() async throws {
       @FetchAll(Record.all) var records
       try await $records.load()
@@ -160,7 +160,7 @@ private struct Record: Equatable, Sendable {
     var date = Date(timeIntervalSince1970: 42)
     @Column(as: Date?.UnixTimeRepresentation.self)
     var optionalDate: Date?
-  #elseif SQLITE_ENGINE_SQLITENO
+  #elseif SQLITE_ENGINE_SQLITENIO
     let date: Date = Date(timeIntervalSince1970: 42)
   #endif
 }
@@ -187,7 +187,7 @@ private struct Record: Equatable, Sendable {
       return database
     }
   }
-#elseif SQLITE_ENGINE_SQLITENO
+#elseif SQLITE_ENGINE_SQLITENIO
   extension SQLiteConnection {
     fileprivate static func nioTestConnection() throws -> SQLiteConnection {
       try Task {

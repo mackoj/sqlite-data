@@ -1,4 +1,4 @@
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
 /// SQLiteNIO-based database abstractions
 ///
 /// This file provides protocol definitions that mirror GRDB's DatabaseReader and DatabaseWriter

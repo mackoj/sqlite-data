@@ -1,6 +1,6 @@
 import Foundation
 
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
 import SQLiteNIO
 
 /// Transaction support for SQLiteNIO connections

@@ -3,19 +3,19 @@ import Foundation
 import SQLiteData
 import Testing
 
-#if SQLITE_ENGINE_SQLITENO
+#if SQLITE_ENGINE_SQLITENIO
   import SQLiteNIO
 #endif
 
 #if SQLITE_ENGINE_GRDB
   @Suite(.dependency(\.defaultDatabase, try .syncUps()))
-#elseif SQLITE_ENGINE_SQLITENO
+#elseif SQLITE_ENGINE_SQLITENIO
   @Suite(.dependency(\.defaultSQLiteConnection, try .nioTestConnection()))
 #endif
 struct IntegrationTests {
   #if SQLITE_ENGINE_GRDB
     @Dependency(\.defaultDatabase) var database
-  #elseif SQLITE_ENGINE_SQLITENO
+  #elseif SQLITE_ENGINE_SQLITENIO
     @Dependency(\.defaultSQLiteConnection) var connection
   #endif
 
@@ -69,7 +69,7 @@ struct IntegrationTests {
       try await $syncUps.load()
       #expect(syncUps == [SyncUp(id: 1, isActive: true, title: "Engineering")])
     }
-  #elseif SQLITE_ENGINE_SQLITENO
+  #elseif SQLITE_ENGINE_SQLITENIO
     @Test func insertAndFetch() async throws {
       // Insert a new record
       _ = try await connection.transaction { conn in
@@ -249,7 +249,7 @@ struct IntegrationTests {
         .fetchAll(db)
     }
   }
-#elseif SQLITE_ENGINE_SQLITENO
+#elseif SQLITE_ENGINE_SQLITENIO
   @Table
   private struct User: Equatable, Sendable {
     let id: Int
