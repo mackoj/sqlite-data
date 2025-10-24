@@ -105,8 +105,8 @@ public struct Fetch<Value: Sendable>: Sendable {
   ) async throws {
     try await sharedReader.load(.fetch(request, database: database))
   }
+  #endif
 }
-#endif
 
 #if SQLITE_ENGINE_GRDB
 extension Fetch {

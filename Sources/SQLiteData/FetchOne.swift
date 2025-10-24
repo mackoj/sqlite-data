@@ -413,8 +413,8 @@ public struct FetchOne<Value: Sendable>: Sendable {
       .fetch(FetchOneStatementOptionalProtocolRequest(statement: statement), database: database)
     )
   }
+  #endif
 }
-#endif
 
 #if SQLITE_ENGINE_GRDB
 extension FetchOne {

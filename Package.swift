@@ -25,7 +25,7 @@ let package = Package(
       name: "SQLiteDataTagged",
       description: "Introduce SQLiteData conformances to the swift-tagged package."
     ),
-    .default(
+    .trait(
       name: "GRDB",
       description: "Use GRDB as the SQLite engine.",
       enabledTraits: []
@@ -35,6 +35,7 @@ let package = Package(
       description: "Use SQLiteNIO as the SQLite engine.",
       enabledTraits: []
     ),
+    .default(enabledTraits: ["GRDB"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-collections", from: "1.0.0"),
@@ -115,7 +116,7 @@ let swiftSettings: [SwiftSetting] = [
 ]
 
 for index in package.targets.indices {
-  package.targets[index].swiftSettings = swiftSettings
+  package.targets[index].swiftSettings = (package.targets[index].swiftSettings ?? []) + swiftSettings
 }
 
 #if !os(Windows)

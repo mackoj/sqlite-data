@@ -1,11 +1,10 @@
+#if SQLITE_ENGINE_SQLITENO
 /// SQLiteNIO Change Observer
 ///
 /// This actor provides database change observation using SQLite's update hooks.
 /// It's the SQLiteNIO equivalent of GRDB's ValueObservation system.
 
 import Foundation
-
-#if SQLITE_ENGINE_SQLITENO
 import SQLiteNIO
 import Sharing
 
