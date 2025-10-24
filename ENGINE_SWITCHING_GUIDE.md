@@ -198,11 +198,16 @@ struct User: Codable {
 
 ### GRDB-Specific Features
 
-- **CloudKit Synchronization**: Full support via `SyncEngine`
+- **CloudKit Synchronization**: Full support via `SyncEngine` (GRDB-only, see note below)
 - **ValueObservation**: Built-in reactive queries
 - **FTS5**: Full-text search support
 - **Custom SQLite functions**: Easy registration
 - **Connection pools**: Read/write separation with `DatabasePool`
+
+> **Note on CloudKit**: CloudKit synchronization requires GRDB and is not available with SQLiteNIO.
+> This is because CloudKit integration depends on GRDB-specific features like `DatabaseMigrator`,
+> custom SQL functions, and connection pooling. If you need CloudKit sync, use the GRDB trait.
+> For cross-platform applications without CloudKit, use SQLiteNIO.
 
 ## Using SQLiteNIO
 
@@ -540,7 +545,7 @@ grep -r "import SQLiteNIO" Sources/SQLiteData/StructuredQueries+GRDB/
 | Basic Queries | ✅ | ✅ |
 | Transactions | ✅ | ✅ |
 | Change Observation | ✅ | ✅ |
-| CloudKit Sync | ✅ | ❌ (planned) |
+| CloudKit Sync | ✅ | ❌ (GRDB-only)* |
 | Connection Pooling | ✅ | ❌ (planned) |
 | FTS5 Full-Text Search | ✅ | ❌ (planned) |
 | Custom Functions | ✅ | ❌ (planned) |
@@ -552,6 +557,8 @@ grep -r "import SQLiteNIO" Sources/SQLiteData/StructuredQueries+GRDB/
 | Status | Stable | Active Development |
 | Community | Large | Growing |
 | Documentation | Extensive | Growing |
+
+\* CloudKit synchronization requires GRDB-specific features (DatabaseMigrator, custom functions, connection pooling) and is not available with SQLiteNIO. See the [GRDB-Specific Features](#grdb-specific-features) section for details.
 
 ### When to Choose GRDB
 
