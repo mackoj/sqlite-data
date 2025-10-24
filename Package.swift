@@ -99,6 +99,10 @@ let package = Package(
         .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
         .product(name: "SnapshotTestingCustomDump", package: "swift-snapshot-testing"),
         .product(name: "StructuredQueries", package: "swift-structured-queries"),
+      ],
+      swiftSettings: [
+        .define("SQLITE_ENGINE_GRDB", .when(traits: ["GRDB"])),
+        .define("SQLITE_ENGINE_SQLITENIO", .when(traits: ["SQLiteNIO"])),
       ]
     ),
   ],
