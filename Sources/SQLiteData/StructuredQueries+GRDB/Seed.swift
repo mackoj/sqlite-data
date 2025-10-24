@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import Dependencies
 import StructuredQueriesCore
 
@@ -54,3 +55,5 @@ extension Database {
     }
   }
 }
+
+#endif

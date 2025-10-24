@@ -1,4 +1,4 @@
-#if canImport(SQLiteNIO)
+#if SQLITE_ENGINE_SQLITENO
 import Dependencies
 import Foundation
 import SQLiteNIO

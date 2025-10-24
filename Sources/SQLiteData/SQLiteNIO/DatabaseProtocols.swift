@@ -7,7 +7,7 @@
 
 import Foundation
 
-#if canImport(SQLiteNIO)
+#if SQLITE_ENGINE_SQLITENO
 import SQLiteNIO
 
 /// Namespace for SQLiteNIO-based implementations

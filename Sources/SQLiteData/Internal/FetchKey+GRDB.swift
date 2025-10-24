@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import Dependencies
 import Dispatch
 import Foundation
@@ -188,3 +189,5 @@ private struct ImmediateScheduler: ValueObservationScheduler, Hashable {
     action()
   }
 }
+
+#endif

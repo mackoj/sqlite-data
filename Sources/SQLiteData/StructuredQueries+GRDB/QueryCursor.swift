@@ -1,3 +1,4 @@
+#if SQLITE_ENGINE_GRDB
 import Foundation
 import GRDB
 import GRDBSQLite
@@ -183,3 +184,5 @@ struct Int64OverflowError: Error {
     self.unsignedInteger = unsignedInteger
   }
 }
+
+#endif
