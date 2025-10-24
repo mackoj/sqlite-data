@@ -1,14 +1,16 @@
-# SQLiteNIO Integration (Experimental)
+# SQLiteNIO Integration (Phase 2 Complete)
 
-This directory contains experimental SQLiteNIO-based implementations that run alongside the existing GRDB code. The goal is to eventually replace GRDB with SQLiteNIO for cross-platform (including Linux) support.
+This directory contains SQLiteNIO-based implementations that run alongside the existing GRDB code. The goal is to eventually replace GRDB with SQLiteNIO for cross-platform (including Linux) support.
 
-## Status: Proof of Concept
+## Status: Phase 2 Complete - ValueObservation Implemented
 
-This is a **proof of concept** demonstrating the key patterns needed for the migration. It is **not production-ready** and should not be used in real applications yet.
+**Phase 2 is now complete!** The core observation mechanics using SQLiteNIO 1.12.0's native update hooks are fully functional. This implementation provides real-time database change observation similar to GRDB's ValueObservation.
 
 ## What's Implemented
 
-### 1. Database Protocols (`DatabaseProtocols.swift`)
+### ✅ Phase 1: Foundation Layer (Complete)
+
+#### 1. Database Protocols (`DatabaseProtocols.swift`)
 - `SQLiteNIODatabase.Reader`: Protocol for read-only database access
 - `SQLiteNIODatabase.Writer`: Protocol for read-write database access  
 - `SQLiteNIODatabase.Connection`: Actor-isolated database connection wrapper
@@ -16,31 +18,46 @@ This is a **proof of concept** demonstrating the key patterns needed for the mig
 
 These provide a GRDB-like API surface using async/await instead of dispatch queues.
 
-### 2. Change Observer (`SQLiteNIOObserver.swift`)
-- `SQLiteNIOObserver`: Actor that observes database changes
-- Uses SQLite's update hook mechanism (placeholder implementation)
-- Integrates with Swift's Sharing library
-- Thread-safe via actor isolation
-
-This replaces GRDB's `ValueObservation` system.
-
-### 3. Row Decoder (`SQLiteRowDecoder.swift`)
+#### 2. Row Decoder (`SQLiteRowDecoder.swift`)
 - `SQLiteRowDecoder`: Decodes `Decodable` types from `SQLiteRow`
 - Handles common types: primitives, Date, UUID, Data
 - Similar to GRDB's `FetchableRecord` but using `Decodable`
 
-## What's NOT Implemented
+### ✅ Phase 2: ValueObservation Mechanics (Complete)
 
-❌ Actual SQLite update hook installation (needs PR #90 or C interop)
+#### 3. Change Observer (`SQLiteNIOObserver.swift`) - **NOW WITH REAL UPDATE HOOKS!**
+- `SQLiteNIOObserver`: Actor that observes database changes
+- **Uses SQLiteNIO 1.12.0's native `addUpdateObserver` API**
+- **Real-time change notifications** via sqlite3_update_hook
+- Integrates with Swift's Sharing library
+- Thread-safe via actor isolation
+- Automatic hook lifecycle management
+
+This **fully replaces** GRDB's `ValueObservation` system.
+
+#### 4. Query Execution (`Statement+SQLiteNIO.swift`)
+- Extensions for `StructuredQueriesCore.Statement`
+- `execute()`: Execute INSERT/UPDATE/DELETE queries
+- `fetchAll()`: Fetch all rows and decode to Swift types
+- `fetchOne()`: Fetch a single row
+- Proper binding conversion from StructuredQueries to SQLiteNIO
+
+#### 5. FetchKey Integration (`FetchKey+SQLiteNIO.swift`)
+- `FetchKeyNIO`: SharedReaderKey implementation for SQLiteNIO
+- Integrates with Swift Sharing library
+- Automatic re-fetching on database changes
+- Compatible with @FetchAll/@FetchOne pattern
+
+## What's NOT Yet Implemented
+
+❌ Complete integration with existing @FetchAll/@FetchOne property wrappers (use FetchKeyNIO instead)
 ❌ Statement caching and optimization
-❌ Transaction management
-❌ Connection pooling
-❌ Integration with existing @FetchAll/@FetchOne property wrappers
-❌ Migration of StructuredQueries integration
-❌ CloudKit sync layer
+❌ Full transaction management (BEGIN/COMMIT/ROLLBACK)
+❌ Connection pooling (read/write separation)
+❌ CloudKit sync layer migration
 ❌ Comprehensive error handling
 ❌ Performance optimizations
-❌ Tests
+❌ Comprehensive tests
 
 ## Architecture Comparison
 
@@ -62,35 +79,78 @@ This replaces GRDB's `ValueObservation` system.
         Swift Sharing/Observation
 ```
 
+## Phase 2 Implementation Details
+
+### Update Hook Integration
+
+We now use SQLiteNIO 1.12.0's **native update hook support**:
+
+```swift
+// Install the hook
+let token = try await connection.addUpdateObserver(lifetime: .pinned) { event in
+  // Called immediately when INSERT/UPDATE/DELETE occurs
+  print("Table \(event.table) row \(event.rowID) changed: \(event.operation)")
+}
+
+// Clean up
+token.cancel()
+```
+
+Key features:
+- **Immediate notification**: Callbacks fire as soon as changes occur
+- **Table-level filtering**: Subscribe only to specific tables
+- **Operation types**: Know whether it was INSERT, UPDATE, or DELETE
+- **Row IDs**: Get the exact row that changed
+- **Automatic cleanup**: Use lifetime management (`.scoped` or `.pinned`)
+
+### Query Execution
+
+Execute StructuredQueries statements directly on SQLiteNIO connections:
+
+```swift
+// Execute a query
+try await User.insert { $0.name; $0.email }
+  .values { "Alice"; "alice@example.com" }
+  .execute(connection)
+
+// Fetch all
+let users = try await User.all.fetchAll(connection)
+
+// Fetch one
+let user = try await User.where { $0.id == 1 }.fetchOne(connection)
+```
+
+### Integration with Sharing Library
+
+Use `FetchKeyNIO` for reactive data access:
+
+```swift
+@SharedReader(.fetchNIO(User.all, connection: connection))
+var users: [User] = []
+
+// users automatically updates when the database changes!
+```
+
 ## Next Steps for Full Implementation
 
 See `MIGRATION_PLAN.md` in the root directory for the complete implementation plan.
 
-### Immediate TODOs:
-1. **Install Update Hook**: Implement actual `sqlite3_update_hook` integration
-   - Option A: Use SQLiteNIO PR #90 when available
-   - Option B: Use raw SQLite3 C API via Swift interop
-   - Option C: Extend SQLiteNIO with custom hook support
+### Phase 3: Property Wrapper Integration (Next)
+1. **Integrate FetchKeyNIO with @FetchAll/@FetchOne**
+   - Update property wrappers to optionally use FetchKeyNIO
+   - Add feature flag for GRDB vs SQLiteNIO
+   - Maintain backward compatibility
 
-2. **Query Execution**: Create async versions of fetch methods
-   - `fetchAll()` → async iterator over rows
-   - `fetchOne()` → async single row fetch
-   - `execute()` → async statement execution
-
-3. **Integrate with FetchKey**: Update `FetchKey.swift` to optionally use SQLiteNIO
-   - Add feature flag or runtime detection
-   - Maintain backward compatibility with GRDB
-
-4. **Transaction Support**: Implement transaction semantics
+2. **Transaction Support**: Implement full transaction semantics
    - BEGIN/COMMIT/ROLLBACK handling
    - Savepoints for nested transactions
    - Proper error rollback
 
-5. **Testing**: Create comprehensive tests
+3. **Testing**: Create comprehensive tests
    - Unit tests for each component
    - Integration tests with Sharing library
    - Linux-specific tests
-   - Performance benchmarks
+   - Performance benchmarks vs GRDB
 
 ## Usage Example (Conceptual)
 
