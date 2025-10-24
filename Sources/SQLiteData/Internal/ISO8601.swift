@@ -2,7 +2,7 @@ import Foundation
 
 extension Date {
   @usableFromInline
-  var iso8601String: String {
+  package var iso8601String: String {
     if #available(iOS 15, macOS 12, tvOS 15, watchOS 8, *) {
       return formatted(.iso8601.currentTimestamp(includingFractionalSeconds: true))
     } else {
@@ -11,7 +11,7 @@ extension Date {
   }
 
   @usableFromInline
-  init(iso8601String: String) throws {
+  package init(iso8601String: String) throws {
     if #available(iOS 15, macOS 12, tvOS 15, watchOS 8, *) {
       do {
         try self.init(
