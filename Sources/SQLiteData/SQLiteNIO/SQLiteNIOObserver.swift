@@ -20,6 +20,19 @@ public actor SQLiteNIOObserver {
     case insert
     case delete
     case update
+    
+    fileprivate init(from operation: SQLiteUpdateOperation) {
+      switch operation {
+      case .insert:
+        self = .insert
+      case .update:
+        self = .update
+      case .delete:
+        self = .delete
+      default:
+        self = .update
+      }
+    }
   }
   
   /// Describes a change to the database
@@ -27,6 +40,12 @@ public actor SQLiteNIOObserver {
     public let type: UpdateType
     public let tableName: String
     public let rowID: Int64
+    
+    fileprivate init(from event: SQLiteUpdateEvent) {
+      self.type = UpdateType(from: event.operation)
+      self.tableName = event.table
+      self.rowID = event.rowID
+    }
   }
   
   /// A subscription that can be cancelled
@@ -39,8 +58,8 @@ public actor SQLiteNIOObserver {
   }
   
   private let connection: SQLiteConnection
-  private var subscribers: [UUID: @Sendable (Change) -> Void] = [:]
-  private var isHookInstalled = false
+  private var subscribers: [UUID: (tables: Set<String>, callback: @Sendable (Change) -> Void)] = [:]
+  private var hookToken: SQLiteHookToken?
   
   public init(connection: SQLiteConnection) {
     self.connection = connection
@@ -50,21 +69,13 @@ public actor SQLiteNIOObserver {
   public func subscribe(
     tables: Set<String>,
     onChange: @escaping @Sendable (Change) -> Void
-  ) -> Subscription {
+  ) async throws -> Subscription {
     let id = UUID()
-    
-    // Wrap the callback to filter by table
-    let filteredCallback: @Sendable (Change) -> Void = { change in
-      if tables.contains(change.tableName) {
-        onChange(change)
-      }
-    }
-    
-    subscribers[id] = filteredCallback
+    subscribers[id] = (tables: tables, callback: onChange)
     
     // Install the hook if this is the first subscriber
-    if !isHookInstalled {
-      installUpdateHook()
+    if hookToken == nil {
+      try await installUpdateHook()
     }
     
     return Subscription(cancelHandler: { [weak self] in
@@ -74,33 +85,31 @@ public actor SQLiteNIOObserver {
   
   private func unsubscribe(id: UUID) {
     subscribers.removeValue(forKey: id)
-  }
-  
-  /// Install the SQLite update hook
-  /// Note: This is a placeholder. The actual implementation would use sqlite3_update_hook
-  /// from PR #90 or via raw SQLite3 C API.
-  private func installUpdateHook() {
-    isHookInstalled = true
     
-    // TODO: Install actual update hook using one of these methods:
-    // 1. SQLiteNIO PR #90 API (when available)
-    // 2. Raw sqlite3_update_hook via C interop
-    // 3. Custom SQLiteNIO extension
-    //
-    // Pseudocode:
-    // connection.installUpdateHook { type, database, table, rowid in
-    //   let change = Change(
-    //     type: mapUpdateType(type),
-    //     tableName: table,
-    //     rowID: rowid
-    //   )
-    //   Task { await self.notifySubscribers(change) }
-    // }
+    // If no more subscribers, cancel the hook
+    if subscribers.isEmpty {
+      hookToken?.cancel()
+      hookToken = nil
+    }
   }
   
-  private func notifySubscribers(_ change: Change) {
-    for subscriber in subscribers.values {
-      subscriber(change)
+  /// Install the SQLite update hook using SQLiteNIO 1.12.0's native support
+  private func installUpdateHook() async throws {
+    hookToken = try await connection.addUpdateObserver(lifetime: .pinned) { [weak self] event in
+      guard let self = self else { return }
+      Task {
+        await self.handleUpdateEvent(event)
+      }
+    }
+  }
+  
+  /// Handle an update event from SQLite and notify relevant subscribers
+  private func handleUpdateEvent(_ event: SQLiteUpdateEvent) {
+    let change = Change(from: event)
+    
+    // Notify only subscribers interested in this table
+    for (_, subscriber) in subscribers where subscriber.tables.contains(change.tableName) {
+      subscriber.callback(change)
     }
   }
 }
@@ -112,8 +121,8 @@ extension SQLiteNIOObserver {
   public func sharedSubscription(
     tables: Set<String>,
     onChange: @escaping @Sendable () -> Void
-  ) -> SharedSubscription {
-    let subscription = subscribe(tables: tables) { _ in
+  ) async throws -> SharedSubscription {
+    let subscription = try await subscribe(tables: tables) { _ in
       onChange()
     }
     return SharedSubscription {

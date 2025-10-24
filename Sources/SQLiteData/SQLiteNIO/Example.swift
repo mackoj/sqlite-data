@@ -42,10 +42,10 @@ public enum SQLiteNIOExample {
     // See above for implementation
   }
   
-  /// Example: Observing database changes
+  /// Example: Observing database changes with SQLiteNIO 1.12.0 update hooks
   ///
   /// ```swift
-  /// // Create observer
+  /// // Create observer with actual update hook support
   /// let observer = SQLiteNIOObserver(connection: connection)
   ///
   /// // Subscribe to changes on specific tables
@@ -116,6 +116,65 @@ public enum SQLiteNIOExample {
   /// }
   /// ```
   public static func sharingIntegration() {
+    // See above for implementation
+  }
+  
+  /// Example: Phase 2 complete integration with StructuredQueries
+  ///
+  /// ```swift
+  /// import StructuredQueriesCore
+  /// import SQLiteNIO
+  ///
+  /// // Define your model
+  /// struct User: Codable, Hashable {
+  ///   let id: Int
+  ///   let name: String
+  ///   let email: String
+  /// }
+  ///
+  /// // Setup connection
+  /// let connection = try await SQLiteConnection.open(
+  ///   storage: .file(path: "users.db"),
+  ///   threadPool: threadPool,
+  ///   on: eventLoop
+  /// ).get()
+  ///
+  /// // Create table
+  /// try await connection.query("""
+  ///   CREATE TABLE IF NOT EXISTS users (
+  ///     id INTEGER PRIMARY KEY,
+  ///     name TEXT NOT NULL,
+  ///     email TEXT NOT NULL
+  ///   )
+  /// """, [])
+  ///
+  /// // Insert using StructuredQueries (when implemented)
+  /// // try await User.insert { $0.name; $0.email }
+  /// //   .values { "Alice"; "alice@example.com" }
+  /// //   .execute(connection)
+  ///
+  /// // Query using StructuredQueries (when implemented)
+  /// // let users = try await User.all.fetchAll(connection)
+  ///
+  /// // Setup observation with actual update hooks
+  /// let observer = SQLiteNIOObserver(connection: connection)
+  /// let subscription = try await observer.subscribe(tables: ["users"]) { change in
+  ///   print("User \(change.rowID) was \(change.type): \(change.tableName)")
+  ///   // This callback is fired immediately when rows change
+  ///   // You can refetch data here to update your UI
+  /// }
+  ///
+  /// // Make changes - observer will be notified
+  /// try await connection.query(
+  ///   "INSERT INTO users (name, email) VALUES (?, ?)",
+  ///   [.text("Bob"), .text("bob@example.com")]
+  /// )
+  /// // Observer callback fires here!
+  ///
+  /// // Clean up
+  /// subscription.cancel()
+  /// ```
+  public static func phase2CompleteExample() async throws {
     // See above for implementation
   }
 }
