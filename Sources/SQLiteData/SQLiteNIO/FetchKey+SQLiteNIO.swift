@@ -117,25 +117,20 @@ struct FetchKeyNIOID: Hashable {
   }
 }
 
-/// Extension to FetchKeyRequest to support SQLiteNIO
+/// Protocol extension to determine observed tables from a request
 extension FetchKeyRequest {
-  /// Fetch the value from a SQLiteNIO connection
-  func fetch(_ connection: SQLiteConnection) async throws -> Value {
-    // This would need to be implemented by conforming types
-    // For now, we'll provide a default implementation that throws
-    throw FetchError.notImplemented
-  }
-  
   /// The tables that this request observes for changes
+  /// Default implementation returns empty set - should be overridden by specific request types
   var observedTables: Set<String> {
-    // Default implementation - this should be overridden by specific requests
-    // For now, return an empty set (observe nothing)
     []
   }
 }
 
-enum FetchError: Error {
-  case notImplemented
-}
+/// Simplified approach: Users can use FetchKeyNIO directly with @SharedReader
+/// Example:
+/// ```swift
+/// @SharedReader(.fetchNIO(MyRequest(), connection: connection))
+/// var myData: MyDataType
+/// ```
 
 #endif
