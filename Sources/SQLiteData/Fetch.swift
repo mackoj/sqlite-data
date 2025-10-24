@@ -77,6 +77,7 @@ public struct Fetch<Value: Sendable>: Sendable {
     sharedReader = SharedReader(value: wrappedValue)
   }
 
+  #if SQLITE_ENGINE_GRDB
   /// Initializes this property with a request associated with the wrapped value.
   ///
   /// - Parameters:
@@ -105,7 +106,9 @@ public struct Fetch<Value: Sendable>: Sendable {
     try await sharedReader.load(.fetch(request, database: database))
   }
 }
+#endif
 
+#if SQLITE_ENGINE_GRDB
 extension Fetch {
   /// Initializes this property with a request associated with the wrapped value.
   ///
@@ -144,6 +147,7 @@ extension Fetch {
     try await sharedReader.load(.fetch(request, database: database, scheduler: scheduler))
   }
 }
+#endif
 
 extension Fetch: CustomReflectable {
   public var customMirror: Mirror {
@@ -163,6 +167,7 @@ extension Fetch: Equatable where Value: Equatable {
       sharedReader.update()
     }
 
+    #if SQLITE_ENGINE_GRDB
     /// Initializes this property with a request associated with the wrapped value.
     ///
     /// - Parameters:
@@ -201,5 +206,6 @@ extension Fetch: Equatable where Value: Equatable {
     ) async throws {
       try await sharedReader.load(.fetch(request, database: database, animation: animation))
     }
+    #endif
   }
 #endif

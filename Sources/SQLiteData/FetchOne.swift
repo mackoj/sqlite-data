@@ -79,6 +79,7 @@ public struct FetchOne<Value: Sendable>: Sendable {
     sharedReader = SharedReader(value: wrappedValue)
   }
 
+  #if SQLITE_ENGINE_GRDB
   /// Initializes this property with a query that fetches the first row from a table.
   ///
   /// - Parameters:
@@ -120,6 +121,7 @@ public struct FetchOne<Value: Sendable>: Sendable {
       .fetch(FetchOneStatementOptionalProtocolRequest(statement: statement), database: database)
     )
   }
+  #endif
 
   /// Initializes this property with a wrapped value.
   ///
@@ -133,6 +135,7 @@ public struct FetchOne<Value: Sendable>: Sendable {
     sharedReader = SharedReader(value: wrappedValue)
   }
 
+  #if SQLITE_ENGINE_GRDB
   /// Initializes this property with a query associated with the wrapped value.
   ///
   /// - Parameters:
@@ -411,7 +414,9 @@ public struct FetchOne<Value: Sendable>: Sendable {
     )
   }
 }
+#endif
 
+#if SQLITE_ENGINE_GRDB
 extension FetchOne {
   /// Initializes this property with a query that fetches the first row from a table.
   ///
@@ -827,6 +832,7 @@ extension FetchOne {
     )
   }
 }
+#endif
 
 extension FetchOne: CustomReflectable {
   public var customMirror: Mirror {
@@ -846,6 +852,7 @@ extension FetchOne: Equatable where Value: Equatable {
       sharedReader.update()
     }
 
+    #if SQLITE_ENGINE_GRDB
     /// Initializes this property with a query that fetches the first row from a table.
     ///
     /// - Parameters:
@@ -1217,9 +1224,11 @@ extension FetchOne: Equatable where Value: Equatable {
     {
       try await load(statement, database: database, scheduler: .animation(animation))
     }
+    #endif
   }
 #endif
 
+#if SQLITE_ENGINE_GRDB
 private struct FetchOneStatementValueRequest<Value: QueryRepresentable>: StatementKeyRequest {
   let statement: SQLQueryExpression<Value>
   init(statement: some StructuredQueriesCore.Statement<Value>) {
@@ -1255,3 +1264,4 @@ private struct FetchOneStatementOptionalProtocolRequest<
     try statement.fetchOne(db) ?? ._none
   }
 }
+#endif

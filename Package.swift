@@ -25,7 +25,7 @@ let package = Package(
       name: "SQLiteDataTagged",
       description: "Introduce SQLiteData conformances to the swift-tagged package."
     ),
-    .trait(
+    .default(
       name: "GRDB",
       description: "Use GRDB as the SQLite engine.",
       enabledTraits: []
