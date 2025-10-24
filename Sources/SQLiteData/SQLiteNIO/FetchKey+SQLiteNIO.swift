@@ -8,19 +8,19 @@ import SQLiteNIO
 /// Extension to support SQLiteNIO-based observation in FetchKey
 extension SharedReaderKey {
   /// Create a fetch key that uses SQLiteNIO for observation
-  static func fetchNIO<Value>(
-    _ request: some FetchKeyRequest<Value>,
+  static func fetchNIO<Value, Request: SQLiteNIOFetchRequest>(
+    _ request: Request,
     connection: SQLiteConnection
   ) -> Self
-  where Self == FetchKeyNIO<Value> {
+  where Self == FetchKeyNIO<Value>, Request.Value == Value {
     FetchKeyNIO(request: request, connection: connection)
   }
   
-  static func fetchNIO<Records: RangeReplaceableCollection>(
-    _ request: some FetchKeyRequest<Records>,
+  static func fetchNIO<Records: RangeReplaceableCollection, Request: SQLiteNIOFetchRequest>(
+    _ request: Request,
     connection: SQLiteConnection
   ) -> Self
-  where Self == FetchKeyNIO<Records>.Default {
+  where Self == FetchKeyNIO<Records>.Default, Request.Value == Records {
     Self[.fetchNIO(request, connection: connection), default: Value()]
   }
 }
@@ -28,7 +28,7 @@ extension SharedReaderKey {
 /// A FetchKey that uses SQLiteNIO for database access and observation
 struct FetchKeyNIO<Value: Sendable>: SharedReaderKey {
   let connection: SQLiteConnection
-  let request: any FetchKeyRequest<Value>
+  let request: any SQLiteNIOFetchRequest<Value>
   
   public typealias ID = FetchKeyNIOID
   
@@ -36,10 +36,10 @@ struct FetchKeyNIO<Value: Sendable>: SharedReaderKey {
     ID(connection: connection, request: request)
   }
   
-  init(
-    request: some FetchKeyRequest<Value>,
+  init<Request: SQLiteNIOFetchRequest>(
+    request: Request,
     connection: SQLiteConnection
-  ) {
+  ) where Request.Value == Value {
     self.connection = connection
     self.request = request
   }
@@ -107,9 +107,9 @@ struct FetchKeyNIOID: Hashable {
   fileprivate let request: AnyHashableSendable
   fileprivate let requestTypeID: ObjectIdentifier
   
-  fileprivate init(
+  fileprivate init<Request: SQLiteNIOFetchRequest>(
     connection: SQLiteConnection,
-    request: some FetchKeyRequest
+    request: Request
   ) {
     self.connectionID = ObjectIdentifier(connection)
     self.request = AnyHashableSendable(request)
@@ -117,20 +117,15 @@ struct FetchKeyNIOID: Hashable {
   }
 }
 
-/// Protocol extension to determine observed tables from a request
-extension FetchKeyRequest {
+/// Protocol for requests that can fetch from SQLiteNIO connections
+public protocol SQLiteNIOFetchRequest<Value>: Sendable, Hashable {
+  associatedtype Value: Sendable
+  
+  /// Fetch the value from a SQLiteNIO connection
+  func fetch(_ connection: SQLiteConnection) async throws -> Value
+  
   /// The tables that this request observes for changes
-  /// Default implementation returns empty set - should be overridden by specific request types
-  var observedTables: Set<String> {
-    []
-  }
+  var observedTables: Set<String> { get }
 }
-
-/// Simplified approach: Users can use FetchKeyNIO directly with @SharedReader
-/// Example:
-/// ```swift
-/// @SharedReader(.fetchNIO(MyRequest(), connection: connection))
-/// var myData: MyDataType
-/// ```
 
 #endif
