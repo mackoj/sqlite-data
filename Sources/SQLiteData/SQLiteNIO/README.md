@@ -63,13 +63,38 @@ All transaction methods feature:
 - Integration with SQLiteNIOObserver
 - ~10x performance improvement for batch operations
 
+### ✅ Phase 4: Property Wrapper Integration (Complete)
+
+#### 6. Direct @FetchAll/@FetchOne Support
+
+The familiar property wrapper syntax now works directly with SQLiteConnection:
+
+```swift
+// Simple and clean
+@FetchAll(User.all, connection: connection) var users
+@FetchOne(User.count, connection: connection) var userCount = 0
+
+// With filters and ordering
+@FetchAll(User.where { $0.active == true }.order(by: \.name), connection: connection) var activeUsers
+
+// Optional values
+@FetchOne(User.where { $0.id == 1 }, connection: connection) var user: User?
+```
+
+Features:
+- Identical syntax to GRDB property wrappers
+- Automatic UI updates via SQLiteNIOObserver
+- Full type safety and compile-time checking
+- Works with all StructuredQueries statement types
+- Zero breaking changes - GRDB code continues to work
+
 ## What's NOT Yet Implemented
 
-❌ Direct @FetchAll/@FetchOne integration with SQLiteConnection (use @SharedReader with FetchKeyNIO instead)
+❌ Default database dependency integration (Phase 5)
 ❌ Statement caching and optimization
 ❌ Connection pooling (read/write separation)
 ❌ CloudKit sync layer migration
-❌ Performance optimizations beyond transactions
+❌ Automatic table name detection from queries
 ❌ Additional comprehensive tests
 
 ## Architecture Comparison
@@ -175,52 +200,63 @@ Features:
 ## Complete Usage Example
 
 ```swift
+import SwiftUI
 import SQLiteNIO
-import Sharing
 
-// Create connection
-let connection = try await SQLiteConnection.open(
-  storage: .file(path: "app.db"),
-  threadPool: threadPool,
-  on: eventLoop
-).get()
-
-// Reactive data access
-@SharedReader(.fetchNIO(AllUsersRequest(), connection: connection))
-var users: [User] = []
-
-// Transactions
-Button("Add User") {
-  Task {
-    try await connection.transaction { conn in
-      try await conn.query(
-        "INSERT INTO users (name) VALUES (?)",
-        [.text("Alice")]
-      )
+struct ContentView: View {
+  let connection: SQLiteConnection
+  
+  // Property wrappers work directly with SQLiteConnection!
+  @FetchAll(User.all, connection: connection) var users
+  @FetchOne(User.count, connection: connection) var userCount = 0
+  
+  var body: some View {
+    VStack {
+      Text("Total Users: \(userCount)")
+      
+      List(users, id: \.id) { user in
+        Text(user.name)
+      }
+      
+      Button("Add User") {
+        Task {
+          try await connection.transaction { conn in
+            try await conn.query(
+              "INSERT INTO users (name) VALUES (?)",
+              [.text("Alice")]
+            )
+          }
+          // @FetchAll automatically updates the UI!
+        }
+      }
     }
-    // UI automatically updates via observer!
   }
 }
 ```
 
-See `PHASE_3_USAGE_GUIDE.md` for complete examples and best practices.
+See `PHASE_4_USAGE_GUIDE.md` for complete examples and best practices.
 
 ## Next Steps for Full Implementation
 
 See `MIGRATION_PLAN.md` in the root directory for the complete implementation plan.
 
-### Phase 4: Enhanced Property Wrapper Integration (Next)
-1. **Direct @FetchAll/@FetchOne integration with SQLiteConnection**
-   - Add initializers that accept SQLiteConnection
-   - Feature flag for GRDB vs SQLiteNIO selection
-   - Maintain 100% backward compatibility
+### Phase 5: Default Database Integration (Next)
+1. **Default database dependency**
+   - Integrate with Dependencies library
+   - Remove need to pass connection explicitly
+   - `@Dependency(\.defaultDatabase)` support
 
-2. **Performance Optimizations**
+2. **Enhanced SwiftUI Previews**
+   - Mock connection utilities
+   - In-memory database helpers
+   - Preview-friendly APIs
+
+3. **Performance Optimizations**
    - Statement caching for prepared statements
    - Connection pooling for read/write separation
-   - Query optimization
+   - Automatic table name detection from queries
 
-3. **Additional Testing**
+4. **Additional Testing**
    - Comprehensive integration tests
    - Linux-specific tests
    - Performance benchmarks vs GRDB
