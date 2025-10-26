@@ -1,4 +1,5 @@
 #if SQLITE_ENGINE_GRDB
+import ConcurrencyExtras
 import Dependencies
 import Foundation
 import GRDB
@@ -32,33 +33,30 @@ private struct CombineCancellableWrapper: SQLiteCancellable {
 extension SQLiteClient {
   /// Creates a SQLiteClient backed by GRDB.
   ///
-  /// This implementation uses GRDB's database pool or queue for all operations.
+  /// This implementation uses the database from `@Dependency(\.defaultDatabase)`.
   ///
   /// Example:
   /// ```swift
-  /// let database = try DatabasePool(path: "path/to/db.sqlite")
-  /// let client = SQLiteClient.grdb(database: database)
+  /// let client = SQLiteClient.grdb
   /// ```
   ///
-  /// - Parameter database: A GRDB database reader (typically a DatabasePool or DatabaseQueue).
   /// - Returns: A SQLiteClient backed by GRDB.
-  public static func grdb(database: any GRDB.DatabaseReader) -> Self {
+  public static var grdb: Self {
     Self(
       read: { block in
-        try await database.read { _ in
-          // The block is async, but GRDB's closure is sync, so we need to use Task
-        }
-        // Execute the async block after the database read completes
+        @Dependency(\.defaultDatabase) var database
+        // GRDB's async read takes a synchronous closure
+        // We need to bridge to async by waiting for the sync closure to complete
+        // then execute our async block
+        try await database.read { _ in }
         try await block()
       },
       write: { block in
-        guard let writer = database as? any GRDB.DatabaseWriter else {
-          throw SQLiteClientError.readOnlyDatabase
-        }
-        try await writer.write { _ in
-          // The block is async, but GRDB's closure is sync, so we need to use Task
-        }
-        // Execute the async block after the database write completes
+        @Dependency(\.defaultDatabase) var database
+        // GRDB's async write takes a synchronous closure
+        // We need to bridge to async by waiting for the sync closure to complete
+        // then execute our async block
+        try await database.write { _ in }
         try await block()
       },
       contextSensitivePath: {
@@ -79,9 +77,7 @@ extension SQLiteClient {
         }
       },
       observeTables: { tables, onChange in
-        guard let writer = database as? any GRDB.DatabaseWriter else {
-          throw SQLiteClientError.observationRequiresWriter
-        }
+        @Dependency(\.defaultDatabase) var database
         
         // Create a value observation that watches for changes in the specified tables
         let observation = ValueObservation.tracking { db -> Int in
@@ -93,7 +89,7 @@ extension SQLiteClient {
         }
         
         #if canImport(Combine)
-        let cancellable = observation.publisher(in: writer)
+        let cancellable = observation.publisher(in: database)
           .sink(
             receiveCompletion: { _ in },
             receiveValue: { _ in onChange() }
@@ -102,7 +98,7 @@ extension SQLiteClient {
         #else
         return await MainActor.run {
           let cancellable = observation.start(
-            in: writer,
+            in: database,
             onError: { _ in },
             onChange: { _ in onChange() }
           )

@@ -11,17 +11,8 @@ import Foundation
 /// different SQLite engines (GRDB or SQLiteNIO). It uses the protocol witness pattern
 /// as described in Point-Free's dependency design documentation.
 ///
-/// ## Creating Instances
-///
-/// The client provides static factory methods for each supported engine:
-///
-/// ```swift
-/// // Using GRDB
-/// let client = SQLiteClient.grdb(database: myDatabase)
-///
-/// // Using SQLiteNIO
-/// let client = SQLiteClient.nio(connection: myConnection)
-/// ```
+/// The database connection is accessed via `@Dependency` within closures, ensuring
+/// the correct engine is used based on compile-time traits.
 ///
 /// ## Usage with Dependencies
 ///
@@ -32,42 +23,43 @@ import Foundation
 /// struct MyApp: App {
 ///   init() {
 ///     prepareDependencies {
-///       $0.sqliteClient = .grdb(database: try! defaultDatabase())
+///       #if SQLITE_ENGINE_GRDB
+///       $0.defaultDatabase = try! defaultDatabase()
+///       #elseif SQLITE_ENGINE_SQLITENIO  
+///       $0.defaultSQLiteConnection = try! await SQLiteConnection.open(...)
+///       #endif
 ///     }
 ///   }
 /// }
 /// ```
 ///
-/// Then access it anywhere using `@Dependency`:
+/// Then use the client anywhere:
 ///
 /// ```swift
 /// @Dependency(\.sqliteClient) var sqliteClient
 ///
 /// // Execute read operations
-/// try await sqliteClient.read { 
-///   // Use engine-specific APIs here
-/// }
-///
-/// // Execute write operations  
-/// try await sqliteClient.write {
-///   // Use engine-specific APIs here
+/// try await sqliteClient.read {
+///   #if SQLITE_ENGINE_GRDB
+///   @Dependency(\.defaultDatabase) var database
+///   // Use database for GRDB operations
+///   #elseif SQLITE_ENGINE_SQLITENIO
+///   @Dependency(\.defaultSQLiteConnection) var connection
+///   // Use connection for SQLiteNIO operations
+///   #endif
 /// }
 /// ```
 public struct SQLiteClient: Sendable {
-  /// Executes a read-only transaction on the database.
+  /// Executes an asynchronous read-only transaction on the database.
   ///
-  /// The closure parameter type depends on the underlying engine:
-  /// - For GRDB: Receives a `GRDB.Database` object
-  /// - For SQLiteNIO: Operations are performed directly on the connection
+  /// The database connection is accessed via `@Dependency` within the closure.
   ///
   /// - Parameter block: A closure for performing read operations.
   public var read: @Sendable (_ block: @escaping @Sendable () async throws -> Void) async throws -> Void
   
-  /// Executes a write transaction on the database.
+  /// Executes an asynchronous write transaction on the database.
   ///
-  /// The closure parameter type depends on the underlying engine:
-  /// - For GRDB: Receives a `GRDB.Database` object
-  /// - For SQLiteNIO: Operations are performed directly on the connection
+  /// The database connection is accessed via `@Dependency` within the closure.
   ///
   /// - Parameter block: A closure for performing write operations.
   public var write: @Sendable (_ block: @escaping @Sendable () async throws -> Void) async throws -> Void
@@ -94,7 +86,7 @@ public struct SQLiteClient: Sendable {
   /// Creates a new SQLiteClient with custom implementations.
   ///
   /// This initializer is typically not called directly. Instead, use the static
-  /// factory methods like ``grdb(database:)`` or ``nio(connection:)``.
+  /// factory methods like ``grdb`` or ``nio``.
   public init(
     read: @escaping @Sendable (_ block: @escaping @Sendable () async throws -> Void) async throws -> Void,
     write: @escaping @Sendable (_ block: @escaping @Sendable () async throws -> Void) async throws -> Void,
@@ -157,17 +149,10 @@ extension DependencyValues {
 extension SQLiteClient {
   /// A live implementation that selects the appropriate engine based on the active trait.
   public static var live: Self {
-    @Dependency(\.context) var context
-    
     #if SQLITE_ENGINE_GRDB
-      do {
-        let database = try defaultDatabase()
-        return .grdb(database: database)
-      } catch {
-        fatalError("Failed to create default database: \(error)")
-      }
+      return .grdb
     #elseif SQLITE_ENGINE_SQLITENIO
-      fatalError("SQLiteNIO requires async initialization. Use prepareDependencies with an async context.")
+      return .nio
     #else
       fatalError("No SQLite engine trait is enabled. Enable either GRDB or SQLiteNIO trait.")
     #endif
@@ -176,14 +161,9 @@ extension SQLiteClient {
   /// A test implementation that uses an in-memory database.
   public static var test: Self {
     #if SQLITE_ENGINE_GRDB
-      do {
-        let database = try defaultDatabase()
-        return .grdb(database: database)
-      } catch {
-        fatalError("Failed to create test database: \(error)")
-      }
+      return .grdb
     #elseif SQLITE_ENGINE_SQLITENIO
-      fatalError("SQLiteNIO test client requires async initialization")
+      return .nio
     #else
       fatalError("No SQLite engine trait is enabled")
     #endif
