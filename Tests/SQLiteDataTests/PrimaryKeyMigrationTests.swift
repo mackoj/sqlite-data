@@ -1,8 +1,10 @@
-#if SQLITE_ENGINE_GRDB
+#if canImport(CloudKit) && SQLITE_ENGINE_GRDB
 import DependenciesTestSupport
 import Foundation
 import InlineSnapshotTesting
+#if canImport(SQLite3)
 import SQLite3
+#endif
 import SQLiteData
 import SQLiteDataTestSupport
 import SnapshotTesting
