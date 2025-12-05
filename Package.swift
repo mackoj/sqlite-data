@@ -34,11 +34,8 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-sharing", from: "2.3.0"),
     .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.18.4"),
     .package(
-      url: "https://github.com/pointfreeco/swift-structured-queries",
-      from: "0.19.1",
-      traits: [
-        .trait(name: "StructuredQueriesTagged", condition: .when(traits: ["SQLiteDataTagged"]))
-      ]
+      url: "https://github.com/mackoj/swift-structured-queries",
+      branch: "feat/incorporate_trait_tagged"
     ),
     .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
     .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", from: "1.5.0"),
@@ -55,8 +52,7 @@ let package = Package(
         .product(name: "StructuredQueriesSQLite", package: "swift-structured-queries"),
         .product(
           name: "Tagged",
-          package: "swift-tagged",
-          condition: .when(traits: ["SQLiteDataTagged"])
+          package: "swift-tagged"
         ),
       ]
     ),
