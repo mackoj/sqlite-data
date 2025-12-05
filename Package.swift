@@ -34,7 +34,8 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-sharing", from: "2.3.0"),
     .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.18.4"),
     .package(
-      path: "/Users/mac-JMACKO01/Developer/swift-structured-queries-tagged"
+      url: "https://github.com/mackoj/swift-structured-queries.git",
+      branch: "feat/incorporate_trait_tagged"
     ),
     .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
     .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", from: "1.5.0"),
