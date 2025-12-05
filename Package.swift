@@ -49,7 +49,7 @@ let package = Package(
         .product(name: "IssueReporting", package: "xctest-dynamic-overlay"),
         .product(name: "OrderedCollections", package: "swift-collections"),
         .product(name: "Sharing", package: "swift-sharing"),
-        .product(name: "StructuredQueriesSQLite", package: "swift-structured-queries-tagged"),
+        .product(name: "StructuredQueriesSQLite", package: "swift-structured-queries"),
         .product(
           name: "Tagged",
           package: "swift-tagged"
@@ -62,7 +62,7 @@ let package = Package(
         "SQLiteData",
         .product(name: "CustomDump", package: "swift-custom-dump"),
         .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
-        .product(name: "StructuredQueriesTestSupport", package: "swift-structured-queries-tagged"),
+        .product(name: "StructuredQueriesTestSupport", package: "swift-structured-queries"),
       ]
     ),
     .testTarget(
@@ -73,7 +73,7 @@ let package = Package(
         .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
         .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
         .product(name: "SnapshotTestingCustomDump", package: "swift-snapshot-testing"),
-        .product(name: "StructuredQueries", package: "swift-structured-queries-tagged"),
+        .product(name: "StructuredQueries", package: "swift-structured-queries"),
       ]
     ),
   ],
