@@ -8,3 +8,10 @@ DerivedData/
 *.orig
 *.sqlite
 *.xcresult
+
+
+# Tuist
+*.xcodeproj
+*.xcworkspace
+Derived/
+.tuist/
