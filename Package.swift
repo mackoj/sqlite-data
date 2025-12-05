@@ -34,8 +34,7 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-sharing", from: "2.3.0"),
     .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.18.4"),
     .package(
-      url: "https://github.com/mackoj/swift-structured-queries",
-      branch: "feat/incorporate_trait_tagged"
+      path: "/Users/mac-JMACKO01/Developer/swift-structured-queries-tagged"
     ),
     .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
     .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", from: "1.5.0"),
@@ -49,7 +48,7 @@ let package = Package(
         .product(name: "IssueReporting", package: "xctest-dynamic-overlay"),
         .product(name: "OrderedCollections", package: "swift-collections"),
         .product(name: "Sharing", package: "swift-sharing"),
-        .product(name: "StructuredQueriesSQLite", package: "swift-structured-queries"),
+        .product(name: "StructuredQueriesSQLite", package: "swift-structured-queries-tagged"),
         .product(
           name: "Tagged",
           package: "swift-tagged"
@@ -62,7 +61,7 @@ let package = Package(
         "SQLiteData",
         .product(name: "CustomDump", package: "swift-custom-dump"),
         .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
-        .product(name: "StructuredQueriesTestSupport", package: "swift-structured-queries"),
+        .product(name: "StructuredQueriesTestSupport", package: "swift-structured-queries-tagged"),
       ]
     ),
     .testTarget(
@@ -73,7 +72,7 @@ let package = Package(
         .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
         .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
         .product(name: "SnapshotTestingCustomDump", package: "swift-snapshot-testing"),
-        .product(name: "StructuredQueries", package: "swift-structured-queries"),
+        .product(name: "StructuredQueries", package: "swift-structured-queries-tagged"),
       ]
     ),
   ],
