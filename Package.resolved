@@ -1,5 +1,5 @@
 {
-  "originHash" : "81715ee116123a512f2c6a0498879d7e2725173f4ab6b4257f98d8ac83441ff8",
+  "originHash" : "fd44388b5a50b5a85e9b3a9bf838dbe9dd7dae5463cdb9764cca1d819cc8b249",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -123,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mackoj/swift-structured-queries",
       "state" : {
-        "branch" : "feat/incorporate_trait_tagged",
-        "revision" : "6be8d35b9154ac2b140b847be96ea87b051c39fe"
+        "revision" : "766bf412d7884de3309f24dcba9d3d2efd370b1f",
+        "version" : "0.25.2-tagged"
       }
     },
     {
